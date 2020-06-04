@@ -47,8 +47,7 @@ contract FlightSuretyData {
     *      This is used on all state changing functions to pause the contract in
     *      the event there is an issue that needs to be fixed
     */
-    modifier requireIsOperational()
-    {
+    modifier requireIsOperational() {
         require(operational, "Contract is currently not operational");
         _;  // All modifiers require an "_" which indicates where the function body will be added
     }
@@ -56,17 +55,17 @@ contract FlightSuretyData {
     /**
     * @dev Modifier that requires the "ContractOwner" account to be the function caller
     */
-    modifier requireContractOwner()
-    {
+    modifier requireContractOwner() {
         require(msg.sender == contractOwner, "Caller is not contract owner");
         _;
     }
+
 
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
 
-    function isAirlineRegistered(address airline) external view returns(bool) {
+    function isAirlineRegistered(address airline) public view returns(bool) {
         return registeredAirlines[airline];
     }
 
@@ -75,11 +74,7 @@ contract FlightSuretyData {
     *
     * @return A bool that is the current operating status
     */
-    function isOperational()
-                            public
-                            view
-                            returns(bool)
-    {
+    function isOperational() public view returns(bool) {
         return operational;
     }
 
@@ -89,13 +84,7 @@ contract FlightSuretyData {
     *
     * When operational mode is disabled, all write transactions except for this one will fail
     */
-    function setOperatingStatus
-                            (
-                                bool mode
-                            )
-                            external
-                            requireContractOwner
-    {
+    function setOperatingStatus (bool mode) external requireContractOwner {
         operational = mode;
     }
 
@@ -138,17 +127,22 @@ contract FlightSuretyData {
         return (votes.mul(2) >= airlineRegisteredCounter);
     }
 
+    /**
+    * @dev Initial funding for the insurance. Unless there are too many delayed flights
+    *      resulting in insurance payouts, the contract should be self-sustaining
+    *
+    */
+    function fund(address airline) public payable  {
+        require(isAirlineRegistered(airline), "Only registered airlines can fund contract.");
+        require(msg.value >= 10 ether, "Insufficient funds sent. Please send at least 10 ether.");
+    }
+
 
    /**
     * @dev Buy insurance for a flight
     *
     */
-    function buy
-                            (
-                            )
-                            external
-                            payable
-    {
+    function buy() external payable {
 
     }
 
@@ -176,19 +170,6 @@ contract FlightSuretyData {
     {
     }
 
-   /**
-    * @dev Initial funding for the insurance. Unless there are too many delayed flights
-    *      resulting in insurance payouts, the contract should be self-sustaining
-    *
-    */
-    function fund
-                            (
-                            )
-                            public
-                            payable
-    {
-    }
-
     function getFlightKey
                         (
                             address airline,
@@ -206,13 +187,7 @@ contract FlightSuretyData {
     * @dev Fallback function for funding smart contract.
     *
     */
-    function()
-                            external
-                            payable
-    {
-        fund();
+    function() external payable {
+        fund(msg.sender);
     }
-
-
 }
-

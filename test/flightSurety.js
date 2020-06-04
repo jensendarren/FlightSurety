@@ -8,6 +8,7 @@ contract('Flight Surety Tests', async (accounts) => {
   var config;
   let newAirline = accounts[2];
   let nonRegisteredAirline = accounts[9];
+  const AIRLINE_ANTE = web3.utils.toWei('10', 'ether');
 
   before('setup contract', async () => {
     config = await Test.Config(accounts);
@@ -24,10 +25,10 @@ contract('Flight Surety Tests', async (accounts) => {
   })
 
   it('should not be possible to register an airline more than once', async () => {
-      await truffleAssert.reverts(
-          config.flightSuretyApp.registerAirline(config.firstAirline, {from: config.firstAirline}),
-          'Airline is already successfully registered.'
-      );
+    await truffleAssert.reverts(
+        config.flightSuretyApp.registerAirline(config.firstAirline, {from: config.firstAirline}),
+        'Airline is already successfully registered.'
+    );
   })
 
   it('isAirlineRegistered should return if the airline is registered or not', async () => {
@@ -57,31 +58,31 @@ contract('Flight Surety Tests', async (accounts) => {
   });
 
   it('can register 4 airlines before consensus is requried to register more', async () => {
-        // There will be two airlines registered at this point so lets register 3 more
-        let newAirline3 = accounts[3];
-        let newAirline4 = accounts[4];
-        let newAirline5 = accounts[5]; // This one will be rejected due to consensus
+    // There will be two airlines registered at this point so lets register 3 more
+    let newAirline3 = accounts[3];
+    let newAirline4 = accounts[4];
+    let newAirline5 = accounts[5]; // This one will be rejected due to consensus
 
-        // Make sure the above 3 airlines are not yet registered
-        let airline3Registerd = await config.flightSuretyApp.isAirlineRegistered(newAirline3);
-        let airline4Registerd = await config.flightSuretyApp.isAirlineRegistered(newAirline4);
-        let airline5Registerd = await config.flightSuretyApp.isAirlineRegistered(newAirline5);
+    // Make sure the above 3 airlines are not yet registered
+    let airline3Registerd = await config.flightSuretyApp.isAirlineRegistered(newAirline3);
+    let airline4Registerd = await config.flightSuretyApp.isAirlineRegistered(newAirline4);
+    let airline5Registerd = await config.flightSuretyApp.isAirlineRegistered(newAirline5);
 
-        assert.equal(airline3Registerd, false, 'Airline 3 should not be registered yet')
-        assert.equal(airline4Registerd, false, 'Airline 4should not be registered yet')
-        assert.equal(airline5Registerd, false, 'Airline 5 should not be registered yet')
+    assert.equal(airline3Registerd, false, 'Airline 3 should not be registered yet')
+    assert.equal(airline4Registerd, false, 'Airline 4should not be registered yet')
+    assert.equal(airline5Registerd, false, 'Airline 5 should not be registered yet')
 
-        await config.flightSuretyApp.registerAirline(newAirline3, {from: config.firstAirline });
-        await config.flightSuretyApp.registerAirline(newAirline4, {from: config.firstAirline });
-        await config.flightSuretyApp.registerAirline(newAirline5, {from: config.firstAirline });
+    await config.flightSuretyApp.registerAirline(newAirline3, {from: config.firstAirline });
+    await config.flightSuretyApp.registerAirline(newAirline4, {from: config.firstAirline });
+    await config.flightSuretyApp.registerAirline(newAirline5, {from: config.firstAirline });
 
-        airline3Registerd = await config.flightSuretyApp.isAirlineRegistered(newAirline3);
-        airline4Registerd = await config.flightSuretyApp.isAirlineRegistered(newAirline4);
-        airline5Registerd = await config.flightSuretyApp.isAirlineRegistered(newAirline5);
+    airline3Registerd = await config.flightSuretyApp.isAirlineRegistered(newAirline3);
+    airline4Registerd = await config.flightSuretyApp.isAirlineRegistered(newAirline4);
+    airline5Registerd = await config.flightSuretyApp.isAirlineRegistered(newAirline5);
 
-        assert.equal(airline3Registerd, true, 'Airline 3 was not registered properly')
-        assert.equal(airline4Registerd, true, 'Airline 4 was not registered properlyt')
-        assert.equal(airline5Registerd, false, 'Airline 5 was registered when it should not have been')
+    assert.equal(airline3Registerd, true, 'Airline 3 was not registered properly')
+    assert.equal(airline4Registerd, true, 'Airline 4 was not registered properlyt')
+    assert.equal(airline5Registerd, false, 'Airline 5 was registered when it should not have been')
   })
 
   it('re-registering the an airline more than once by the same airline should not increase the vote', async () => {
@@ -90,6 +91,24 @@ contract('Flight Surety Tests', async (accounts) => {
         config.flightSuretyApp.registerAirline(newAirline5, {from: config.firstAirline }),
         'Sender already cast vote for registering this airline'
     )
+  })
+
+  it('should be not possible to send less than 10 ether to fund the contract', async () => {
+    await truffleAssert.reverts(
+      config.flightSuretyApp.fund({from: config.firstAirline, value: web3.utils.toWei('9', 'ether')}),
+      'Insufficient funds sent. Please send at least 10 ether.'
+    )
+  })
+
+  it('should be not possible for a non registered airline to fund the contract', async () => {
+    await truffleAssert.reverts(
+      config.flightSuretyApp.fund({from: nonRegisteredAirline, value: AIRLINE_ANTE}),
+      'Only registered airlines can fund contract.'
+    )
+  })
+
+  it('should be possible for a registered airline to send ether to fund the contract', async () => {
+    await config.flightSuretyApp.fund({from: config.firstAirline, value: AIRLINE_ANTE})
   })
 
   xit(`(multiparty) has correct initial isOperational() value`, async function () {

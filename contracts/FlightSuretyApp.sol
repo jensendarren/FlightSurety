@@ -62,7 +62,7 @@ contract FlightSuretyApp {
         _;
     }
 
-    /**
+        /**
      * @dev Modifier that ensures teh msg.sender is a registered airline
      */
      modifier requireAirlineRegistered() {
@@ -87,11 +87,7 @@ contract FlightSuretyApp {
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
 
-    function isOperational()
-                            public
-                            pure
-                            returns(bool)
-    {
+    function isOperational() public pure returns(bool) {
         return true;  // Modify to call data contract's status
     }
 
@@ -109,8 +105,18 @@ contract FlightSuretyApp {
     *
     */
     function registerAirline(address airline) external requireAirlineRegistered returns(bool success, uint8 votes) {
+        // add to a nominatedAirlines mapping
         (success, votes) = flightSuretyData.registerAirline(airline);
         return (success, votes);
+    }
+
+    /**
+    * @dev Funds the smart contract
+    * The funds are forwared to the data contract
+    *
+    */
+    function fund() payable public {
+        flightSuretyData.fund.value(msg.value)(msg.sender);
     }
 
 
@@ -118,13 +124,7 @@ contract FlightSuretyApp {
     * @dev Register a future flight for insuring.
     *
     */
-    function registerFlight
-                                (
-                                )
-                                external
-                                pure
-    {
-
+    function registerFlight() external pure {
     }
 
    /**
@@ -343,5 +343,6 @@ contract FlightSuretyApp {
 contract FlightSuretyData {
     function isAirlineRegistered(address airline) external returns(bool);
     function registerAirline(address airline) external returns(bool, uint8);
+    function fund(address airline) external payable;
 }
 // endregion
