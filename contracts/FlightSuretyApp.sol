@@ -11,6 +11,7 @@ import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 /************************************************** */
 contract FlightSuretyApp {
     using SafeMath for uint256; // Allow SafeMath functions to be called for all uint256 types (similar to "prototype" in Javascript)
+    FlightSuretyData flightSuretyData; // variable to reference the data contract
 
     /********************************************************************************************/
     /*                                       DATA VARIABLES                                     */
@@ -47,8 +48,7 @@ contract FlightSuretyApp {
     *      This is used on all state changing functions to pause the contract in
     *      the event there is an issue that needs to be fixed
     */
-    modifier requireIsOperational()
-    {
+    modifier requireIsOperational() {
          // Modify to call data contract's status
         require(true, "Contract is currently not operational");
         _;  // All modifiers require an "_" which indicates where the function body will be added
@@ -57,11 +57,18 @@ contract FlightSuretyApp {
     /**
     * @dev Modifier that requires the "ContractOwner" account to be the function caller
     */
-    modifier requireContractOwner()
-    {
+    modifier requireContractOwner() {
         require(msg.sender == contractOwner, "Caller is not contract owner");
         _;
     }
+
+    /**
+     * @dev Modifier that ensures teh msg.sender is a registered airline
+     */
+     modifier requireAirlineRegistered() {
+         require(isAirlineRegistered(msg.sender), "Caller must be a registered airline");
+         _;
+     }
 
     /********************************************************************************************/
     /*                                       CONSTRUCTOR                                        */
@@ -71,8 +78,9 @@ contract FlightSuretyApp {
     * @dev Contract constructor
     *
     */
-    constructor() public {
+    constructor(address dataContract) public {
         contractOwner = msg.sender;
+        flightSuretyData = FlightSuretyData(dataContract);
     }
 
     /********************************************************************************************/
@@ -87,6 +95,10 @@ contract FlightSuretyApp {
         return true;  // Modify to call data contract's status
     }
 
+    function isAirlineRegistered(address airline) public view returns(bool) {
+        return flightSuretyData.isAirlineRegistered(airline);
+    }
+
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -96,8 +108,9 @@ contract FlightSuretyApp {
     * @dev Add an airline to the registration queue
     *
     */
-    function registerAirline() external pure returns(bool success, uint256 votes) {
-        return (success, 0);
+    function registerAirline(address airline) external requireAirlineRegistered returns(bool success, uint8 votes) {
+        (success, votes) = flightSuretyData.registerAirline(airline);
+        return (success, votes);
     }
 
 
@@ -120,10 +133,10 @@ contract FlightSuretyApp {
     */
     function processFlightStatus
                                 (
-                                    address airline,
-                                    string memory flight,
-                                    uint256 timestamp,
-                                    uint8 statusCode
+                                    // address airline,
+                                    // string memory flight,
+                                    // uint256 timestamp,
+                                    // uint8 statusCode
                                 )
                                 internal
                                 pure
@@ -260,7 +273,7 @@ contract FlightSuretyApp {
             emit FlightStatusInfo(airline, flight, timestamp, statusCode);
 
             // Handle flight status as appropriate
-            processFlightStatus(airline, flight, timestamp, statusCode);
+            //processFlightStatus(airline, flight, timestamp, statusCode);
         }
     }
 
@@ -325,3 +338,10 @@ contract FlightSuretyApp {
 // endregion
 
 }
+
+// region FlightSuretyData interface
+contract FlightSuretyData {
+    function isAirlineRegistered(address airline) external returns(bool);
+    function registerAirline(address airline) external returns(bool, uint8);
+}
+// endregion

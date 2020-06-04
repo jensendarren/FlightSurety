@@ -59,6 +59,10 @@ contract FlightSuretyData {
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
 
+    function isAirlineRegistered(address airline) external view returns(bool) {
+        return airlines[airline] > 0;
+    }
+
     /**
     * @dev Get operating status of contract
     *
@@ -97,7 +101,9 @@ contract FlightSuretyData {
     *      Can only be called from FlightSuretyApp contract
     *
     */
-    function registerAirline() external pure {
+    function registerAirline(address airline) external returns(bool success, int8 votes) {
+        airlines[airline] = 1;
+        return (true, 1);
     }
 
 
