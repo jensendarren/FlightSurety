@@ -4,6 +4,7 @@ import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract FlightSuretyData {
     using SafeMath for uint256;
+    using SafeMath for uint8;
 
     /********************************************************************************************/
     /*                                       DATA VARIABLES                                     */
@@ -11,8 +12,14 @@ contract FlightSuretyData {
 
     address private contractOwner;                                      // Account used to deploy contract
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
-    mapping(address => uint8) public airlines;
-    uint8 airlineCounter = 1;
+    mapping(address => bool) public registeredAirlines;
+    // map nominated airline address to vote counter of voting airline
+    mapping(address => uint8) public nominatedAirlines;
+    // map the airline that voted for which airline
+    // to make sure they can only vote once
+    mapping(address => mapping(address => bool)) public votedAirlines;
+
+    uint8 airlineRegisteredCounter = 1;
 
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
@@ -25,7 +32,7 @@ contract FlightSuretyData {
     */
     constructor(address firstAirline) public {
         contractOwner = msg.sender;
-        airlines[firstAirline] = airlineCounter;
+        registeredAirlines[firstAirline] = true;
     }
 
     /********************************************************************************************/
@@ -60,7 +67,7 @@ contract FlightSuretyData {
     /********************************************************************************************/
 
     function isAirlineRegistered(address airline) external view returns(bool) {
-        return airlines[airline] > 0;
+        return registeredAirlines[airline];
     }
 
     /**
@@ -101,9 +108,34 @@ contract FlightSuretyData {
     *      Can only be called from FlightSuretyApp contract
     *
     */
-    function registerAirline(address airline) external returns(bool success, int8 votes) {
-        airlines[airline] = 1;
-        return (true, 1);
+    function registerAirline(address airline) external returns(bool success, uint8 votes) {
+        require(!registeredAirlines[airline], "Airline is already successfully registered.");
+        require(!votedAirlines[msg.sender][airline], "Sender already cast vote for registering this airline");
+
+        success = false;
+        // keep a track of which airline the sender voted for
+        votedAirlines[msg.sender][airline] = true;
+        // Increment vote counter for the nominated airline
+        nominatedAirlines[airline] = uint8(nominatedAirlines[airline].add(1));
+        votes = nominatedAirlines[airline];
+
+        if (airlineRegistrationConsensusReached(votes)) {
+            success = true;
+            // Add the airline to the list of registered airlines
+            registeredAirlines[airline] = success;
+            // Increment the number of registered airlines counter
+            airlineRegisteredCounter = uint8(airlineRegisteredCounter.add(1));
+        }
+
+        return (success, votes);
+    }
+
+    function airlineRegistrationConsensusReached(uint8 votes) internal view returns(bool) {
+        if (airlineRegisteredCounter < 4) {
+            return true;
+        }
+        // Return if the vote amounts to more than 50% of the registered airlines
+        return (votes.mul(2) >= airlineRegisteredCounter);
     }
 
 
