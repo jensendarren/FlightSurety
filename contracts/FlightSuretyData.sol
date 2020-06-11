@@ -18,6 +18,8 @@ contract FlightSuretyData {
     // map the airline that voted for which airline
     // to make sure they can only vote once
     mapping(address => mapping(address => bool)) public votedAirlines;
+    // map the balance of ether for each airline in this contract
+    mapping(address => uint256) fundedAirlines;
 
     uint8 airlineRegisteredCounter = 1;
 
@@ -60,6 +62,11 @@ contract FlightSuretyData {
         _;
     }
 
+    modifier requireAirlineFunded(address airline) {
+        require(isAirlineFunded(airline), "Airline connot vote until it funds the contract.");
+        _;
+    }
+
 
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
@@ -67,6 +74,10 @@ contract FlightSuretyData {
 
     function isAirlineRegistered(address airline) public view returns(bool) {
         return registeredAirlines[airline];
+    }
+
+    function isAirlineFunded(address airline) public view returns(bool) {
+        return fundedAirlines[airline] > 0;
     }
 
     /**
@@ -97,13 +108,14 @@ contract FlightSuretyData {
     *      Can only be called from FlightSuretyApp contract
     *
     */
-    function registerAirline(address airline) external returns(bool success, uint8 votes) {
+    function registerAirline(address airline, address voter) external returns(bool success, uint8 votes) {
         require(!registeredAirlines[airline], "Airline is already successfully registered.");
-        require(!votedAirlines[msg.sender][airline], "Sender already cast vote for registering this airline");
+        require(!votedAirlines[voter][airline], "Sender already cast vote for registering this airline");
+        require(isAirlineFunded(voter), "Airline connot vote until it funds the contract.");
 
         success = false;
         // keep a track of which airline the sender voted for
-        votedAirlines[msg.sender][airline] = true;
+        votedAirlines[voter][airline] = true;
         // Increment vote counter for the nominated airline
         nominatedAirlines[airline] = uint8(nominatedAirlines[airline].add(1));
         votes = nominatedAirlines[airline];
@@ -135,6 +147,8 @@ contract FlightSuretyData {
     function fund(address airline) public payable  {
         require(isAirlineRegistered(airline), "Only registered airlines can fund contract.");
         require(msg.value >= 10 ether, "Insufficient funds sent. Please send at least 10 ether.");
+        // Log the balance transfer for the airline
+        fundedAirlines[airline] = msg.value;
     }
 
 
@@ -149,12 +163,8 @@ contract FlightSuretyData {
     /**
      *  @dev Credits payouts to insurees
     */
-    function creditInsurees
-                                (
-                                )
-                                external
-                                pure
-    {
+    function creditInsurees() external pure {
+
     }
 
 

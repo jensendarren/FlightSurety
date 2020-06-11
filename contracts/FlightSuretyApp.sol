@@ -106,7 +106,7 @@ contract FlightSuretyApp {
     */
     function registerAirline(address airline) external requireAirlineRegistered returns(bool success, uint8 votes) {
         // add to a nominatedAirlines mapping
-        (success, votes) = flightSuretyData.registerAirline(airline);
+        (success, votes) = flightSuretyData.registerAirline(airline, msg.sender);
         return (success, votes);
     }
 
@@ -342,7 +342,7 @@ contract FlightSuretyApp {
 // region FlightSuretyData interface
 contract FlightSuretyData {
     function isAirlineRegistered(address airline) external returns(bool);
-    function registerAirline(address airline) external returns(bool, uint8);
+    function registerAirline(address airline, address voter) external returns(bool, uint8);
     function fund(address airline) external payable;
 }
 // endregion
