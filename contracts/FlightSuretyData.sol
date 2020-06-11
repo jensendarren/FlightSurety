@@ -12,6 +12,13 @@ contract FlightSuretyData {
 
     address private contractOwner;                                      // Account used to deploy contract
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
+
+    // Struct for holding insuree data
+    struct Insuree {
+        address passenger;
+        uint256 value;
+    }
+
     mapping(address => bool) public registeredAirlines;
     // map nominated airline address to vote counter of voting airline
     mapping(address => uint8) public nominatedAirlines;
@@ -20,6 +27,8 @@ contract FlightSuretyData {
     mapping(address => mapping(address => bool)) public votedAirlines;
     // map the balance of ether for each airline in this contract
     mapping(address => uint256) fundedAirlines;
+    // map the insured passengers on each flight
+    mapping(bytes32 => Insuree[]) flights;
 
     uint8 airlineRegisteredCounter = 1;
 
@@ -89,6 +98,23 @@ contract FlightSuretyData {
         return operational;
     }
 
+    function isPassengerInsured(address insuree, address airline, string flight, uint256 timestamp) public view returns(bool) {
+        bytes32 _key = getFlightKey(airline, flight, timestamp);
+        (address passenger, uint256 value) = findPassengerInFlight(insuree, _key);
+        return passenger == insuree && value > 0;
+    }
+
+    function findPassengerInFlight(address insuree, bytes32 key) private returns (address passenger, uint256 value) {
+        Insuree[] memory passengers = flights[key];
+        Insuree memory foundPassenger;
+        for (uint i = 0; i < passengers.length; i++) {
+            if (passengers[i].passenger == insuree) {
+                foundPassenger = passengers[i];
+            }
+        }
+        return (foundPassenger.passenger, foundPassenger.value);
+    }
+
 
     /**
     * @dev Sets contract operations on/off
@@ -108,10 +134,9 @@ contract FlightSuretyData {
     *      Can only be called from FlightSuretyApp contract
     *
     */
-    function registerAirline(address airline, address voter) external returns(bool success, uint8 votes) {
+    function registerAirline(address airline, address voter) external requireAirlineFunded(voter) returns(bool success, uint8 votes) {
         require(!registeredAirlines[airline], "Airline is already successfully registered.");
         require(!votedAirlines[voter][airline], "Sender already cast vote for registering this airline");
-        require(isAirlineFunded(voter), "Airline connot vote until it funds the contract.");
 
         success = false;
         // keep a track of which airline the sender voted for
@@ -156,8 +181,19 @@ contract FlightSuretyData {
     * @dev Buy insurance for a flight
     *
     */
-    function buy() external payable {
+    function buy(address insuree, address airline, string flight, uint256 timestamp) external payable {
+        require(msg.value <= 1 ether, "Cannot buy insurance valued at more than 1 ether.");
+        require(!registeredAirlines[insuree], "Airlines can not purchase passenger insturance.");
+        require(!isPassengerInsured(insuree, airline, flight, timestamp), 'Cannot buy insurance for the same flight more than once.');
 
+        Insuree memory passenger = Insuree({
+            passenger: insuree,
+            value: msg.value
+        });
+
+        bytes32 _key = getFlightKey(airline, flight, timestamp);
+
+        flights[_key].push(passenger);
     }
 
     /**
@@ -167,29 +203,14 @@ contract FlightSuretyData {
 
     }
 
-
     /**
      *  @dev Transfers eligible payout funds to insuree
      *
     */
-    function pay
-                            (
-                            )
-                            external
-                            pure
-    {
+    function pay() external pure {
     }
 
-    function getFlightKey
-                        (
-                            address airline,
-                            string memory flight,
-                            uint256 timestamp
-                        )
-                        pure
-                        internal
-                        returns(bytes32)
-    {
+    function getFlightKey(address airline, string memory flight, uint256 timestamp) pure internal returns(bytes32) {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
 

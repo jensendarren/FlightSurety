@@ -119,6 +119,9 @@ contract FlightSuretyApp {
         flightSuretyData.fund.value(msg.value)(msg.sender);
     }
 
+    function buy(address airline, string flight, uint256 timestamp) payable public {
+        flightSuretyData.buy.value(msg.value)(msg.sender, airline, flight, timestamp);
+    }
 
    /**
     * @dev Register a future flight for insuring.
@@ -131,28 +134,17 @@ contract FlightSuretyApp {
     * @dev Called after oracle has updated flight status
     *
     */
-    function processFlightStatus
-                                (
+    function processFlightStatus(
                                     // address airline,
                                     // string memory flight,
                                     // uint256 timestamp,
                                     // uint8 statusCode
-                                )
-                                internal
-                                pure
-    {
+                                ) internal pure {
     }
 
 
     // Generate a request for oracles to fetch flight information
-    function fetchFlightStatus
-                        (
-                            address airline,
-                            string flight,
-                            uint256 timestamp
-                        )
-                        external
-    {
+    function fetchFlightStatus (address airline, string flight, uint256 timestamp) external {
         uint8 index = getRandomIndex(msg.sender);
 
         // Generate a unique key for storing the request
@@ -344,5 +336,6 @@ contract FlightSuretyData {
     function isAirlineRegistered(address airline) external returns(bool);
     function registerAirline(address airline, address voter) external returns(bool, uint8);
     function fund(address airline) external payable;
+    function buy(address insuree, address airline, string flight, uint256 timestamp) external payable;
 }
 // endregion

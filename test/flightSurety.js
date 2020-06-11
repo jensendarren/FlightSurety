@@ -10,8 +10,15 @@ contract('Flight Surety Tests', async (accounts) => {
   let newAirline3 = accounts[3];
   let newAirline4 = accounts[4];
   let newAirline5 = accounts[5];
+  let passenger1 = accounts[6];
+  let passenger2 = accounts[7];
+  let passenger3 = accounts[8];
   let nonRegisteredAirline = accounts[9];
+
   const AIRLINE_ANTE = web3.utils.toWei('10', 'ether');
+  const MAX_INSURANCE_FEE = web3.utils.toWei('1', 'ether');
+  const FLIGHT_NUMBER = 'AC110';
+  const FLIGHT_TIMESTAMP = '1591878209161'
 
   before('setup contract', async () => {
     config = await Test.Config(accounts);
@@ -145,60 +152,98 @@ contract('Flight Surety Tests', async (accounts) => {
     });
   })
 
+  describe('passenger / insuree contract interaction', () => {
+    describe('purchasing insurance', () => {
+      it('should not be possible to purchase insurance valued more than 1 ether', async () => {
+        await truffleAssert.reverts(
+          config.flightSuretyApp.buy(newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1, value: web3.utils.toWei('1.1', 'Ether')}),
+          'Cannot buy insurance valued at more than 1 ether.'
+        )
+      })
+      it('should not be a registed airline makeing an instance purchase', async () => {
+        await truffleAssert.reverts(
+          config.flightSuretyApp.buy(newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: config.firstAirline, value: web3.utils.toWei('1', 'Ether')}),
+          'Airlines can not purchase passenger insturance.'
+        )
+      })
+      it('uninsured passengers should not be returned as insured for a particular flight', async () =>{
+        isPassengerInsrured = await config.flightSuretyData.isPassengerInsured(passenger1,newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP);
+        assert.equal(isPassengerInsrured, false, 'Passenger was marked as insured for a flight when they should not be.');
+      })
+      it('should be possible to purchase insurance for 1 ether or less', async () => {
+        await config.flightSuretyApp.buy(newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1, value: web3.utils.toWei('1', 'Ether')});
+        //check isinsured
+        isPassengerInsrured = await config.flightSuretyData.isPassengerInsured(passenger1,newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP);
+        assert.equal(isPassengerInsrured, true, 'Passenger was not marked as insured for this flight');
+      })
+      it('insured passengers for one flight should not insured on another flight', async () =>{
+        isPassengerInsrured = await config.flightSuretyData.isPassengerInsured(passenger1, newAirline3, 'anotherflight', FLIGHT_TIMESTAMP);
+        assert.equal(isPassengerInsrured, false, 'Passenger was marked as insured for a flight when they should not be.');
+      })
+      it('should not be possible to purcahse the insurance for the same flight more than once', async () => {
+        await truffleAssert.reverts(
+          config.flightSuretyApp.buy(newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1, value: web3.utils.toWei('0.9', 'Ether')}),
+          'Cannot buy insurance for the same flight more than once.'
+        )
+      })
+    })
+  })
 
-  xit(`(multiparty) has correct initial isOperational() value`, async function () {
-    // Get operating status
-    let status = await config.flightSuretyData.isOperational.call();
-    assert.equal(status, true, "Incorrect initial operating status value");
+  describe('set operational status', () => {
+    xit(`(multiparty) has correct initial isOperational() value`, async function () {
+      // Get operating status
+      let status = await config.flightSuretyData.isOperational.call();
+      assert.equal(status, true, "Incorrect initial operating status value");
 
-  });
+    });
 
-  xit(`(multiparty) can block access to setOperatingStatus() for non-Contract Owner account`, async function () {
+    xit(`(multiparty) can block access to setOperatingStatus() for non-Contract Owner account`, async function () {
 
-      // Ensure that access is denied for non-Contract Owner account
-      let accessDenied = false;
-      try
-      {
-          await config.flightSuretyData.setOperatingStatus(false, { from: config.testAddresses[2] });
-      }
-      catch(e) {
-          accessDenied = true;
-      }
-      assert.equal(accessDenied, true, "Access not restricted to Contract Owner");
+        // Ensure that access is denied for non-Contract Owner account
+        let accessDenied = false;
+        try
+        {
+            await config.flightSuretyData.setOperatingStatus(false, { from: config.testAddresses[2] });
+        }
+        catch(e) {
+            accessDenied = true;
+        }
+        assert.equal(accessDenied, true, "Access not restricted to Contract Owner");
 
-  });
+    });
 
-  xit(`(multiparty) can allow access to setOperatingStatus() for Contract Owner account`, async function () {
+    xit(`(multiparty) can allow access to setOperatingStatus() for Contract Owner account`, async function () {
 
-      // Ensure that access is allowed for Contract Owner account
-      let accessDenied = false;
-      try
-      {
-          await config.flightSuretyData.setOperatingStatus(false);
-      }
-      catch(e) {
-          accessDenied = true;
-      }
-      assert.equal(accessDenied, false, "Access not restricted to Contract Owner");
+        // Ensure that access is allowed for Contract Owner account
+        let accessDenied = false;
+        try
+        {
+            await config.flightSuretyData.setOperatingStatus(false);
+        }
+        catch(e) {
+            accessDenied = true;
+        }
+        assert.equal(accessDenied, false, "Access not restricted to Contract Owner");
 
-  });
+    });
 
-  xit(`(multiparty) can block access to functions using requireIsOperational when operating status is false`, async function () {
+    xit(`(multiparty) can block access to functions using requireIsOperational when operating status is false`, async function () {
 
-      await config.flightSuretyData.setOperatingStatus(false);
+        await config.flightSuretyData.setOperatingStatus(false);
 
-      let reverted = false;
-      try
-      {
-          await config.flightSurety.setTestingMode(true);
-      }
-      catch(e) {
-          reverted = true;
-      }
-      assert.equal(reverted, true, "Access not blocked for requireIsOperational");
+        let reverted = false;
+        try
+        {
+            await config.flightSurety.setTestingMode(true);
+        }
+        catch(e) {
+            reverted = true;
+        }
+        assert.equal(reverted, true, "Access not blocked for requireIsOperational");
 
-      // Set it back for other tests to work
-      await config.flightSuretyData.setOperatingStatus(true);
+        // Set it back for other tests to work
+        await config.flightSuretyData.setOperatingStatus(true);
 
-  });
+    });
+  })
 });
