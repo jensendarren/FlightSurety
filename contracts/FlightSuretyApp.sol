@@ -123,6 +123,14 @@ contract FlightSuretyApp {
         flightSuretyData.buy.value(msg.value)(msg.sender, airline, flight, timestamp);
     }
 
+    function pay(address airline, string flight, uint256 timestamp) payable public {
+        flightSuretyData.pay(msg.sender, airline, flight, timestamp);
+    }
+
+    function creditInsurees(address airline, string flight, uint256 timestamp) public  {
+        flightSuretyData.creditInsurees(airline, flight, timestamp);
+    }
+
    /**
     * @dev Register a future flight for insuring.
     *
@@ -337,5 +345,7 @@ contract FlightSuretyData {
     function registerAirline(address airline, address voter) external returns(bool, uint8);
     function fund(address airline) external payable;
     function buy(address insuree, address airline, string flight, uint256 timestamp) external payable;
+    function pay(address insuree, address airline, string flight, uint256 timestamp) external payable;
+    function creditInsurees(address airline, string flight, uint256 timestamp) external;
 }
 // endregion

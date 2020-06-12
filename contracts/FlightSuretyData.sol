@@ -13,10 +13,10 @@ contract FlightSuretyData {
     address private contractOwner;                                      // Account used to deploy contract
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
 
-    // Struct for holding insuree data
-    struct Insuree {
-        address passenger;
-        uint256 value;
+    // Struct for holding instance amounts paid in and due (if flight is delayed)
+    struct Insurance {
+        uint256 paidIn; // the amount they paid in when the purchased the insurance
+        uint256 creditDue; // the amount of credit that is due based on the insurance event
     }
 
     mapping(address => bool) public registeredAirlines;
@@ -28,7 +28,9 @@ contract FlightSuretyData {
     // map the balance of ether for each airline in this contract
     mapping(address => uint256) fundedAirlines;
     // map the insured passengers on each flight
-    mapping(bytes32 => Insuree[]) flights;
+    mapping(bytes32 => mapping(address => Insurance)) flights;
+    // map the passnger address on each flight
+    mapping(bytes32 => address[]) passengers;
 
     uint8 airlineRegisteredCounter = 1;
 
@@ -98,23 +100,10 @@ contract FlightSuretyData {
         return operational;
     }
 
-    function isPassengerInsured(address insuree, address airline, string flight, uint256 timestamp) public view returns(bool) {
-        bytes32 _key = getFlightKey(airline, flight, timestamp);
-        (address passenger, uint256 value) = findPassengerInFlight(insuree, _key);
-        return passenger == insuree && value > 0;
+    function isPassengerInsured(address passenger, bytes32 flightKey) public view returns(bool) {
+        Insurance memory insured = flights[flightKey][passenger];
+        return insured.paidIn > 0;
     }
-
-    function findPassengerInFlight(address insuree, bytes32 key) private returns (address passenger, uint256 value) {
-        Insuree[] memory passengers = flights[key];
-        Insuree memory foundPassenger;
-        for (uint i = 0; i < passengers.length; i++) {
-            if (passengers[i].passenger == insuree) {
-                foundPassenger = passengers[i];
-            }
-        }
-        return (foundPassenger.passenger, foundPassenger.value);
-    }
-
 
     /**
     * @dev Sets contract operations on/off
@@ -181,36 +170,51 @@ contract FlightSuretyData {
     * @dev Buy insurance for a flight
     *
     */
-    function buy(address insuree, address airline, string flight, uint256 timestamp) external payable {
+    function buy(address passenger, address airline, string flight, uint256 timestamp) external payable {
         require(msg.value <= 1 ether, "Cannot buy insurance valued at more than 1 ether.");
-        require(!registeredAirlines[insuree], "Airlines can not purchase passenger insturance.");
-        require(!isPassengerInsured(insuree, airline, flight, timestamp), 'Cannot buy insurance for the same flight more than once.');
+        require(!registeredAirlines[passenger], "Airlines can not purchase passenger insturance.");
+        bytes32 _key = getFlightKey(airline, flight, timestamp);
+        require(!isPassengerInsured(passenger, _key),
+            'Cannot buy insurance for the same flight more than once.');
 
-        Insuree memory passenger = Insuree({
-            passenger: insuree,
-            value: msg.value
+        Insurance memory insured = Insurance({
+            paidIn: msg.value,
+            creditDue: 0
         });
 
-        bytes32 _key = getFlightKey(airline, flight, timestamp);
+        flights[_key][passenger] = insured;
 
-        flights[_key].push(passenger);
+        // add to the passengers list for the flight
+        passengers[_key].push(passenger);
     }
 
     /**
      *  @dev Credits payouts to insurees
     */
-    function creditInsurees() external pure {
-
+    function creditInsurees(address airline, string flight, uint256 timestamp) external view {
+        bytes32 _key = getFlightKey(airline, flight, timestamp);
+        for (uint256 i = 0; i < passengers[_key].length; i++) {
+            address passenger = passengers[_key][i];
+            flights[_key][passenger].creditDue = flights[_key][passenger].paidIn.mul(15).div(10);
+        }
     }
 
     /**
      *  @dev Transfers eligible payout funds to insuree
      *
     */
-    function pay() external pure {
+    function pay(address passenger, address airline, string flight, uint256 timestamp) external view {
+        bytes32 _key = getFlightKey(airline, flight, timestamp);
+        require(isPassengerInsured(passenger, _key), 'Passenger is not insured.');
+        require(flights[_key][passenger].creditDue > 0, 'There is no payment due for this passenger.');
+
+        uint256 payment = flights[_key][passenger].creditDue;
+        flights[_key][passenger].creditDue = 0;
+        address(uint160(passenger)).transfer(payment);
+        // emit InsurancePayoutPaid(passenger, payment);
     }
 
-    function getFlightKey(address airline, string memory flight, uint256 timestamp) pure internal returns(bytes32) {
+    function getFlightKey(address airline, string memory flight, uint256 timestamp) internal pure returns(bytes32) {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
 
