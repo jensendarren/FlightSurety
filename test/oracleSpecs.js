@@ -8,7 +8,7 @@ contract('Flight Surety Oracle Tests', async (accounts) => {
   var config;
 
   before('setup contract', async () => {
-    // config = await Test.Config(accounts);
+    config = await Test.Config(accounts);
 
     // Watch contract events
     const STATUS_CODE_UNKNOWN = 0;
@@ -20,9 +20,7 @@ contract('Flight Surety Oracle Tests', async (accounts) => {
 
   });
 
-
-  xit('can register oracles', async () => {
-
+  it.only('can register oracles', async () => {
     // ARRANGE
     let fee = await config.flightSuretyApp.REGISTRATION_FEE.call();
 

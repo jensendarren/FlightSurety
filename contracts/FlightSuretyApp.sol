@@ -120,6 +120,7 @@ contract FlightSuretyApp {
     }
 
     function buy(address airline, string flight, uint256 timestamp) payable public {
+        // TODO: check flight is registered
         flightSuretyData.buy.value(msg.value)(msg.sender, airline, flight, timestamp);
     }
 
@@ -128,6 +129,7 @@ contract FlightSuretyApp {
     }
 
     function creditInsurees(address airline, string flight, uint256 timestamp) public  {
+        // TODO: check the flight is actually marked as deplayed!
         flightSuretyData.creditInsurees(airline, flight, timestamp);
     }
 
@@ -211,12 +213,7 @@ contract FlightSuretyApp {
 
 
     // Register an oracle with the contract
-    function registerOracle
-                            (
-                            )
-                            external
-                            payable
-    {
+    function registerOracle() external payable {
         // Require registration fee
         require(msg.value >= REGISTRATION_FEE, "Registration fee is required");
 
