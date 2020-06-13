@@ -1,35 +1,23 @@
-
 var Test = require('../config/testConfig.js');
 var truffleAssert = require('truffle-assertions');
-var BigNumber = require('bignumber.js');
+// var BigNumber = require('bignumber.js');
 
-contract('Flight Surety Tests', async (accounts) => {
+contract('Flight Surety Airline Tests', async (accounts) => {
 
   var config;
   let newAirline = accounts[2];
   let newAirline3 = accounts[3];
   let newAirline4 = accounts[4];
   let newAirline5 = accounts[5];
-  let passenger1 = accounts[6];
-  let passenger2 = accounts[7];
-  let passenger3 = accounts[8];
   let nonRegisteredAirline = accounts[9];
 
   const AIRLINE_ANTE = web3.utils.toWei('10', 'ether');
-  const MAX_INSURANCE_FEE = web3.utils.toWei('1', 'ether');
-  const FLIGHT_NUMBER = 'AC110';
-  const FLIGHT_TIMESTAMP = '1591878209161'
-  const FLIGHT_KEY = '0xdebdf334a196e44c8850aa8cc16dd5970e9ec484150c295329c72af6cadb24cc'
-  const NON_VALID_FLIGHT_KEY = '0xdebdf334a196e44c8850aa8cc16dd5970e9ec484150c295329c72af6cadb24cd'
 
   before('setup contract', async () => {
     config = await Test.Config(accounts);
     // await config.flightSuretyData.authorizeCaller(config.flightSuretyApp.address);
   });
 
-  /****************************************************************************************/
-  /* Operations and Settings                                                              */
-  /****************************************************************************************/
   describe('funding the contract', () => {
     it('should be not possible for a non registered airline to fund the contract', async () => {
       await truffleAssert.reverts(
@@ -153,133 +141,4 @@ contract('Flight Surety Tests', async (accounts) => {
       assert.equal(isRegistered, false, "Airline should not be able to register another airline if it hasn't provided funding");
     });
   })
-
-  describe('passenger / insuree contract interaction', () => {
-    describe('Passenger Payment', () => {
-      it('should not be possible to purchase insurance valued more than 1 ether', async () => {
-        await truffleAssert.reverts(
-          config.flightSuretyApp.buy(newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1, value: web3.utils.toWei('1.1', 'Ether')}),
-          'Cannot buy insurance valued at more than 1 ether.'
-        )
-      })
-      it('should not be a registed airline makeing an instance purchase', async () => {
-        await truffleAssert.reverts(
-          config.flightSuretyApp.buy(newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: config.firstAirline, value: web3.utils.toWei('1', 'Ether')}),
-          'Airlines can not purchase passenger insturance.'
-        )
-      })
-      it('uninsured passengers should not be returned as insured for a particular flight', async () =>{
-        isPassengerInsrured = await config.flightSuretyData.isPassengerInsured(passenger1, FLIGHT_KEY);
-        assert.equal(isPassengerInsrured, false, 'Passenger was marked as insured for a flight when they should not be.');
-      })
-      it('should be possible to purchase insurance for 1 ether or less', async () => {
-        await config.flightSuretyApp.buy(newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1, value: web3.utils.toWei('1', 'Ether')});
-        //check isinsured
-        isPassengerInsrured = await config.flightSuretyData.isPassengerInsured(passenger1, FLIGHT_KEY);
-        assert.equal(isPassengerInsrured, true, 'Passenger was not marked as insured for this flight');
-      })
-      it('insured passengers for one flight should not insured on another flight', async () =>{
-        isPassengerInsrured = await config.flightSuretyData.isPassengerInsured(passenger1, NON_VALID_FLIGHT_KEY);
-        assert.equal(isPassengerInsrured, false, 'Passenger was marked as insured for a flight when they should not be.');
-      })
-      it('should not be possible to purcahse the insurance for the same flight more than once', async () => {
-        await truffleAssert.reverts(
-          config.flightSuretyApp.buy(newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1, value: web3.utils.toWei('0.9', 'Ether')}),
-          'Cannot buy insurance for the same flight more than once.'
-        )
-      })
-    })
-
-    describe('passenger repayment', () => {
-      it('the passenger must be insured for the flight to be paid', async () => {
-        await truffleAssert.reverts(
-          config.flightSuretyApp.pay(newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger2}),
-          'Passenger is not insured.'
-        )
-      })
-      it('the passenger should not receive any funds when there is no payout due', async () => {
-        await truffleAssert.reverts(
-          config.flightSuretyApp.pay(newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1}),
-          'There is no payment due for this passenger.'
-        )
-      })
-      it('is possible to credit insurers and make a payout', async () => {
-        await config.flightSuretyApp.creditInsurees(newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP);
-
-        let startBalance = BigNumber(await web3.eth.getBalance(passenger1));
-        let tx = await config.flightSuretyApp.pay(newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1});
-        let gasPrice = BigNumber(await web3.eth.getGasPrice())
-        let txGasFee = BigNumber(tx.receipt.gasUsed * gasPrice)
-        let endBalance =  BigNumber(await web3.eth.getBalance(passenger1));
-        let payoutAmount = BigNumber(web3.utils.toWei('1.5', 'ether'));
-        let expectedBalance = startBalance.minus(txGasFee).plus(payoutAmount);
-
-        assert.equal(endBalance.isEqualTo(expectedBalance), true, 'Payment was not issued');
-      })
-      it('should not be possible to withdraw insurance payout more than once', async () => {
-        await truffleAssert.reverts(
-          config.flightSuretyApp.pay(newAirline3, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1}),
-          'There is no payment due for this passenger.'
-        )
-      })
-    })
-  })
-
-  describe('set operational status', () => {
-    xit(`(multiparty) has correct initial isOperational() value`, async function () {
-      // Get operating status
-      let status = await config.flightSuretyData.isOperational.call();
-      assert.equal(status, true, "Incorrect initial operating status value");
-
-    });
-
-    xit(`(multiparty) can block access to setOperatingStatus() for non-Contract Owner account`, async function () {
-
-        // Ensure that access is denied for non-Contract Owner account
-        let accessDenied = false;
-        try
-        {
-            await config.flightSuretyData.setOperatingStatus(false, { from: config.testAddresses[2] });
-        }
-        catch(e) {
-            accessDenied = true;
-        }
-        assert.equal(accessDenied, true, "Access not restricted to Contract Owner");
-
-    });
-
-    xit(`(multiparty) can allow access to setOperatingStatus() for Contract Owner account`, async function () {
-
-        // Ensure that access is allowed for Contract Owner account
-        let accessDenied = false;
-        try
-        {
-            await config.flightSuretyData.setOperatingStatus(false);
-        }
-        catch(e) {
-            accessDenied = true;
-        }
-        assert.equal(accessDenied, false, "Access not restricted to Contract Owner");
-
-    });
-
-    xit(`(multiparty) can block access to functions using requireIsOperational when operating status is false`, async function () {
-
-        await config.flightSuretyData.setOperatingStatus(false);
-
-        let reverted = false;
-        try
-        {
-            await config.flightSurety.setTestingMode(true);
-        }
-        catch(e) {
-            reverted = true;
-        }
-        assert.equal(reverted, true, "Access not blocked for requireIsOperational");
-
-        // Set it back for other tests to work
-        await config.flightSuretyData.setOperatingStatus(true);
-
-    });
-  })
-});
+})

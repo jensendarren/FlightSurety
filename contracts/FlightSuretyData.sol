@@ -171,6 +171,7 @@ contract FlightSuretyData {
     *
     */
     function buy(address passenger, address airline, string flight, uint256 timestamp) external payable {
+        require(isAirlineRegistered(airline), "The airline must be registered to buy insurance.");
         require(msg.value <= 1 ether, "Cannot buy insurance valued at more than 1 ether.");
         require(!registeredAirlines[passenger], "Airlines can not purchase passenger insturance.");
         bytes32 _key = getFlightKey(airline, flight, timestamp);
@@ -214,7 +215,7 @@ contract FlightSuretyData {
         // emit InsurancePayoutPaid(passenger, payment);
     }
 
-    function getFlightKey(address airline, string memory flight, uint256 timestamp) internal pure returns(bytes32) {
+    function getFlightKey(address airline, string memory flight, uint256 timestamp) public pure returns(bytes32) {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
 
