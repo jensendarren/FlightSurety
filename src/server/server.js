@@ -5,10 +5,7 @@ import express from 'express';
 
 let config = Config['localhost'];
 let web3 = new Web3(new Web3.providers.WebsocketProvider(config.url.replace('http', 'ws')));
-// web3.eth.defaultAccount = web3.eth.accounts[0];
 let flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
-console.log(Object.keys(flightSuretyApp));
-console.log(flightSuretyApp.abi) // should not be undefined
 
 const ORACLES_COUNT = 20;
 
@@ -22,15 +19,41 @@ flightSuretyApp.events.OracleRequest({
   console.log(event)
 });
 
+let accounts;
+let oracles = {
+  0: [],
+  1: [],
+  2: [],
+  3: [],
+  4: [],
+  5: [],
+  6: [],
+  7: [],
+  8: [],
+  9: [],
+};
+
 const registerOracles =  async () => {
-  // TODO; implement code
+  let fee = await flightSuretyApp.methods.REGISTRATION_FEE().call();
+
+  for(let i=1; i<ORACLES_COUNT; i++) {
+    await flightSuretyApp.methods.registerOracle().send({ from: accounts[i], value: fee, gas: 30000000 });
+    let result = await flightSuretyApp.methods.getMyIndexes().call({from: accounts[i]});
+    oracles[result[0]].push(accounts[i]);
+    oracles[result[1]].push(accounts[i]);
+    oracles[result[2]].push(accounts[i]);
+  }
+
+  console.log('ORACLES SAVED: ------', oracles);
+
   return true;
 }
 
 // Setup function
 (async () => {
-  let accounts = await web3.eth.getAccounts();
+  accounts = await web3.eth.getAccounts();
   web3.eth.defaultAccount = accounts[0];
+  console.log("DEFAULT ACCOUNT", web3.eth.defaultAccount);
   let registered = await registerOracles();
 })();
 

@@ -1,6 +1,5 @@
 var Test = require('../config/testConfig.js');
 var truffleAssert = require('truffle-assertions');
-// var BigNumber = require('bignumber.js');
 
 contract('Flight Surety Airline Tests', async (accounts) => {
 

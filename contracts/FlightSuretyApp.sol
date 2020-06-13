@@ -225,19 +225,11 @@ contract FlightSuretyApp {
                                     });
     }
 
-    function getMyIndexes
-                            (
-                            )
-                            view
-                            external
-                            returns(uint8[3])
-    {
+    function getMyIndexes() view external returns(uint8[3]) {
         require(oracles[msg.sender].isRegistered, "Not registered as an oracle");
 
         return oracles[msg.sender].indexes;
     }
-
-
 
 
     // Called by oracle when a response is available to an outstanding request

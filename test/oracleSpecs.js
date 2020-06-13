@@ -1,6 +1,5 @@
 
 var Test = require('../config/testConfig.js');
-//var BigNumber = require('bignumber.js');
 
 contract('Flight Surety Oracle Tests', async (accounts) => {
 
@@ -28,7 +27,9 @@ contract('Flight Surety Oracle Tests', async (accounts) => {
     for(let a=1; a<TEST_ORACLES_COUNT; a++) {
       await config.flightSuretyApp.registerOracle({ from: accounts[a], value: fee });
       let result = await config.flightSuretyApp.getMyIndexes.call({from: accounts[a]});
-      console.log(`Oracle Registered: ${result[0]}, ${result[1]}, ${result[2]}`);
+      assert.equal(web3.utils.isBN(result[0]), true, 'Index 0 is not set');
+      assert.equal(web3.utils.isBN(result[1]), true, 'Index 1 is not set');
+      assert.equal(web3.utils.isBN(result[2]), true, 'Index 2 is not set');
     }
   });
 
