@@ -10,19 +10,19 @@ contract('Flight Surety Contraction Operational Tests', async (accounts) => {
     config = await Test.Config(accounts);
   });
 
-  it(`(multiparty) has correct initial isOperational() value`, async () => {
+  it('has correct initial isOperational() value', async () => {
     let status = await config.flightSuretyData.isOperational.call();
     assert.equal(status, true, "Incorrect initial operating status value");
   });
 
-  it(`(multiparty) can block access to setOperatingStatus() for non-Contract Owner account`, async () => {
+  it('can block access to setOperatingStatus() for non-Contract Owner account', async () => {
     await truffleAssert.reverts(
       config.flightSuretyData.setOperatingStatus(false, { from: config.testAddresses[2] }),
       'Caller is not contract owner'
     )
   });
 
-  it(`(multiparty) can allow access to setOperatingStatus() for Contract Owner account`, async () => {
+  it('can allow access to setOperatingStatus() for Contract Owner account', async () => {
     let status = await config.flightSuretyData.isOperational.call();
     assert.equal(status, true, "Contract is not initialized in an operational state");
     await config.flightSuretyData.setOperatingStatus(false);
@@ -30,7 +30,7 @@ contract('Flight Surety Contraction Operational Tests', async (accounts) => {
     assert.equal(status, false, "Access not restricted to Contract Owner");
   });
 
-  it(`(multiparty) can block access to functions using requireIsOperational when operating status is false`, async  () => {
+  it('can block access to functions using requireIsOperational when operating status is false', async  () => {
     await config.flightSuretyData.setOperatingStatus(false);
     await truffleAssert.reverts(
       config.flightSuretyApp.registerAirline(newAirline, {from: config.firstAirline }),
@@ -43,5 +43,16 @@ contract('Flight Surety Contraction Operational Tests', async (accounts) => {
       config.flightSuretyApp.registerAirline(newAirline, {from: config.firstAirline }),
       "Airline connot vote until it funds the contract."
     )
+  })
+
+  it('the app contract uses the operational status of the data contract', async () => {
+    // Get the operational status from the app contract
+    let status = await config.flightSuretyApp.isOperational.call();
+    assert.equal(status, true, "Incorrect initial operating status value");
+    // Set the operational status via the data contract
+    await config.flightSuretyData.setOperatingStatus(false);
+    // Update the status via teh APP contract, it should match the same as the operational status in the data contract
+    status = await config.flightSuretyApp.isOperational.call();
+    assert.equal(status, false, "Incorrect initial operating status value");
   })
 })

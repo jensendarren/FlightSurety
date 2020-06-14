@@ -50,8 +50,7 @@ contract FlightSuretyApp {
     *      the event there is an issue that needs to be fixed
     */
     modifier requireIsOperational() {
-         // Modify to call data contract's status
-        require(true, "Contract is currently not operational");
+        require(isOperational(), "Contract is currently not operational");
         _;  // All modifiers require an "_" which indicates where the function body will be added
     }
 
@@ -93,8 +92,8 @@ contract FlightSuretyApp {
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
 
-    function isOperational() public pure returns(bool) {
-        return true;  // Modify to call data contract's status
+    function isOperational() public view returns(bool) {
+        return flightSuretyData.isOperational();
     }
 
     function isAirlineRegistered(address airline) public view returns(bool) {
@@ -110,7 +109,7 @@ contract FlightSuretyApp {
     * @dev Add an airline to the registration queue
     *
     */
-    function registerAirline(address airline) external requireAirlineRegistered returns(bool success, uint8 votes) {
+    function registerAirline(address airline) external requireIsOperational requireAirlineRegistered returns(bool success, uint8 votes) {
         // add to a nominatedAirlines mapping
         (success, votes) = flightSuretyData.registerAirline(airline, msg.sender);
         return (success, votes);
@@ -121,16 +120,16 @@ contract FlightSuretyApp {
     * The funds are forwared to the data contract
     *
     */
-    function fund() payable public {
+    function fund() requireIsOperational payable public {
         flightSuretyData.fund.value(msg.value)(msg.sender);
     }
 
     function buy(address airline, string flight, uint256 timestamp)
-        requireFlightRegistered(getFlightKey(airline, flight, timestamp)) payable public {
+        requireIsOperational requireFlightRegistered(getFlightKey(airline, flight, timestamp)) payable public {
         flightSuretyData.buy.value(msg.value)(msg.sender, airline, flight, timestamp);
     }
 
-    function pay(address airline, string flight, uint256 timestamp) payable public {
+    function pay(address airline, string flight, uint256 timestamp) requireIsOperational payable public {
         flightSuretyData.pay(msg.sender, airline, flight, timestamp);
     }
 
@@ -138,7 +137,7 @@ contract FlightSuretyApp {
     * @dev Register a future flight for insuring.
     *
     */
-    function registerFlight(string number, uint256 timestamp) requireAirlineRegistered() external {
+    function registerFlight(string number, uint256 timestamp) requireIsOperational requireAirlineRegistered() external {
         bytes32 _key = getFlightKey(msg.sender, number, timestamp);
         Flight memory flight = Flight({
             statusCode: STATUS_CODE_UNKNOWN,
@@ -154,7 +153,7 @@ contract FlightSuretyApp {
     * @dev Called after oracle has updated flight status
     *
     */
-    function processFlightStatus(address airline, string memory flight, uint256 timestamp, uint8 statusCode) internal {
+    function processFlightStatus(address airline, string memory flight, uint256 timestamp, uint8 statusCode) requireIsOperational internal {
         // update the flight mapping with the new statis
         bytes32 _key = getFlightKey(airline, flight, timestamp);
         flights[_key].statusCode = statusCode;
@@ -167,7 +166,7 @@ contract FlightSuretyApp {
 
     // Generate a request for oracles to fetch flight information
     function fetchFlightStatus (address airline, string flight, uint256 timestamp)
-            requireFlightRegistered(getFlightKey(airline, flight, timestamp)) external {
+            requireIsOperational requireFlightRegistered(getFlightKey(airline, flight, timestamp)) external {
         uint8 index = getRandomIndex(msg.sender);
 
         // Generate a unique key for storing the request
@@ -317,6 +316,7 @@ contract FlightSuretyApp {
 
 // region FlightSuretyData interface
 contract FlightSuretyData {
+    function isOperational() external returns(bool);
     function isAirlineRegistered(address airline) external returns(bool);
     function registerAirline(address airline, address voter) external returns(bool, uint8);
     function fund(address airline) external payable;
