@@ -1,4 +1,5 @@
 import FlightSuretyApp from '../../build/contracts/FlightSuretyApp.json';
+import FlightSuretyData from '../../build/contracts/FlightSuretyData.json';
 import Config from './config.json';
 import Web3 from 'web3';
 
@@ -9,14 +10,15 @@ export default class Contract {
         // this.web3 = new Web3(new Web3.providers.HttpProvider(config.url));
         this.web3 = new Web3(new Web3.providers.WebsocketProvider(config.url.replace('http', 'ws')));
         this.flightSuretyApp = new this.web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
-        this.initialize(callback);
+        this.flightSuretyData = new this.web3.eth.Contract(FlightSuretyData.abi, config.dataAddress);
+        this.initialize(callback, config.appAddress);
         this.registerEvents(callback);
         this.owner = null;
         this.airlines = [];
         this.passengers = [];
     }
 
-    initialize(callback) {
+    initialize(callback, address) {
         this.web3.eth.getAccounts((error, accts) => {
 
             this.owner = accts[0];
@@ -30,6 +32,13 @@ export default class Contract {
             while(this.passengers.length < 5) {
                 this.passengers.push(accts[counter++]);
             }
+
+            this.flightSuretyData.methods
+                .setAuthorizedCaller(address)
+                .send({from: this.owner}, (error, result) => {
+                    console.log(error);
+                });
+
             callback();
         });
     }
