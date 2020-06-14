@@ -9,6 +9,7 @@ let flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddre
 let registeredAirline;
 
 const ORACLES_COUNT = 20;
+const ORACLE_ACCOUNT_START_INDEX = 30; // make sure to start ganache cli with at least 50 accounts
 const STATUS_CODE_UNKNOWN = 0;
 const STATUS_CODE_ON_TIME = 10;
 const STATUS_CODE_LATE_AIRLINE = 20;
@@ -54,16 +55,18 @@ let oracles = {
 
 const registerOracles =  async () => {
   let fee = await flightSuretyApp.methods.REGISTRATION_FEE().call();
+  let accountIndex = ORACLE_ACCOUNT_START_INDEX;
 
   for(let i=1; i<ORACLES_COUNT; i++) {
-    await flightSuretyApp.methods.registerOracle().send({ from: accounts[i], value: fee, gas: 30000000 });
-    let result = await flightSuretyApp.methods.getMyIndexes().call({from: accounts[i]});
-    oracles[result[0]].push(accounts[i]);
-    oracles[result[1]].push(accounts[i]);
-    oracles[result[2]].push(accounts[i]);
+    await flightSuretyApp.methods.registerOracle().send({ from: accounts[accountIndex], value: fee, gas: 30000000 });
+    let result = await flightSuretyApp.methods.getMyIndexes().call({from: accounts[accountIndex]});
+    oracles[result[0]].push(accounts[accountIndex]);
+    oracles[result[1]].push(accounts[accountIndex]);
+    oracles[result[2]].push(accounts[accountIndex]);
+    accountIndex+=1;
   }
 
-  console.log('ORACLES SAVED: ------', oracles);
+  console.log('Registered Oracles: ', oracles);
 
   return true;
 }

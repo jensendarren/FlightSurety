@@ -6,9 +6,11 @@ export default class Contract {
     constructor(network, callback) {
 
         let config = Config[network];
-        this.web3 = new Web3(new Web3.providers.HttpProvider(config.url));
+        // this.web3 = new Web3(new Web3.providers.HttpProvider(config.url));
+        this.web3 = new Web3(new Web3.providers.WebsocketProvider(config.url.replace('http', 'ws')));
         this.flightSuretyApp = new this.web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
         this.initialize(callback);
+        this.registerEvents(callback);
         this.owner = null;
         this.airlines = [];
         this.passengers = [];
@@ -28,9 +30,26 @@ export default class Contract {
             while(this.passengers.length < 5) {
                 this.passengers.push(accts[counter++]);
             }
-
             callback();
         });
+    }
+
+    async registerEvents(callback) {
+        await this.flightSuretyApp.events.OracleReport({ fromBlock: 'latest' })
+                .on('data', (e) => {
+                    let event = new CustomEvent("OracleReportEvent", { "detail": e.returnValues.status })
+                    document.dispatchEvent(event);
+                })
+                .on('changed', console.log)
+                .on('error', console.log);
+
+        await this.flightSuretyApp.events.FlightStatusInfo({ fromBlock: 'latest' })
+                .on('data', (e) => {
+                    let event = new CustomEvent("FlightStatusInfo", { "detail": e.returnValues.status })
+                    document.dispatchEvent(event);
+                })
+                .on('changed', console.log)
+                .on('error', console.log);
     }
 
     isOperational(callback) {
@@ -40,12 +59,12 @@ export default class Contract {
             .call({ from: self.owner}, callback);
     }
 
-    fetchFlightStatus(flight, callback) {
+    fetchFlightStatus(flight, timestamp, callback) {
         let self = this;
         let payload = {
             airline: self.airlines[0],
             flight: flight,
-            timestamp: Math.floor(Date.now() / 1000)
+            timestamp: timestamp,
         }
         self.flightSuretyApp.methods
             .fetchFlightStatus(payload.airline, payload.flight, payload.timestamp)
