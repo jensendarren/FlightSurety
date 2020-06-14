@@ -30,7 +30,8 @@ contract FlightSuretyApp {
     struct Flight {
         bool isRegistered;
         uint8 statusCode;
-        uint256 updatedTimestamp;
+        uint256 timestamp;
+        string number;
         address airline;
     }
     mapping(bytes32 => Flight) private flights;
@@ -67,6 +68,11 @@ contract FlightSuretyApp {
      */
      modifier requireAirlineRegistered() {
          require(isAirlineRegistered(msg.sender), "Caller must be a registered airline");
+         _;
+     }
+
+    modifier requireFlightRegistered(bytes32 key) {
+         require(flights[key].isRegistered, "Flight must be registered");
          _;
      }
 
@@ -137,7 +143,16 @@ contract FlightSuretyApp {
     * @dev Register a future flight for insuring.
     *
     */
-    function registerFlight() external pure {
+    function registerFlight(string number, uint256 timestamp) requireAirlineRegistered() external {
+        bytes32 _key = getFlightKey(msg.sender, number, timestamp);
+        Flight memory flight = Flight({
+            statusCode: STATUS_CODE_UNKNOWN,
+            isRegistered: true,
+            airline: msg.sender,
+            number: number,
+            timestamp: timestamp
+        });
+        flights[_key] = flight;
     }
 
    /**
@@ -154,7 +169,8 @@ contract FlightSuretyApp {
 
 
     // Generate a request for oracles to fetch flight information
-    function fetchFlightStatus (address airline, string flight, uint256 timestamp) external {
+    function fetchFlightStatus (address airline, string flight, uint256 timestamp)
+            requireFlightRegistered(getFlightKey(airline, flight, timestamp)) external {
         uint8 index = getRandomIndex(msg.sender);
 
         // Generate a unique key for storing the request

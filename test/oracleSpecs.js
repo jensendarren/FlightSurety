@@ -61,8 +61,17 @@ contract('Flight Surety Oracle Tests', async (accounts) => {
   });
 
   describe('request flight status', () => {
+    it('flight needs to be registered before requesting a flight status from an oracle', async () => {
+      await truffleAssert.reverts(
+        config.flightSuretyApp.fetchFlightStatus(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger}),
+        'Flight must be registered'
+      )
+    })
     it('should be possible to request a flight status update from an oracle', async () => {
-      let tx = await config.flightSuretyApp.fetchFlightStatus(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger})
+      // register the flight first
+      await config.flightSuretyApp.registerFlight(FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: config.firstAirline});
+
+      let tx = await config.flightSuretyApp.fetchFlightStatus(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger});
 
       truffleAssert.eventEmitted(tx, 'OracleRequest', (e) => {
         indexHasOracle = oracles[e.index].length > 0;
@@ -74,7 +83,6 @@ contract('Flight Surety Oracle Tests', async (accounts) => {
       })
     })
   })
-
   describe('submit oracle response', () => {
     it('should not be possible to submit a response if the Oracle index does not match', async () => {
       let oracle = oracles[0][0];
