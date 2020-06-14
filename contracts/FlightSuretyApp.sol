@@ -125,8 +125,8 @@ contract FlightSuretyApp {
         flightSuretyData.fund.value(msg.value)(msg.sender);
     }
 
-    function buy(address airline, string flight, uint256 timestamp) payable public {
-        // TODO: check flight is registered
+    function buy(address airline, string flight, uint256 timestamp)
+        requireFlightRegistered(getFlightKey(airline, flight, timestamp)) payable public {
         flightSuretyData.buy.value(msg.value)(msg.sender, airline, flight, timestamp);
     }
 

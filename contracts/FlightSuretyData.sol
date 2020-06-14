@@ -174,6 +174,7 @@ contract FlightSuretyData {
     function buy(address passenger, address airline, string flight, uint256 timestamp) requireIsOperational external payable {
         require(isAirlineRegistered(airline), "The airline must be registered to buy insurance.");
         require(msg.value <= 1 ether, "Cannot buy insurance valued at more than 1 ether.");
+        require(msg.value > 0, "Cannot buy insurance without any value.");
         require(!registeredAirlines[passenger], "Airlines can not purchase passenger insturance.");
         bytes32 _key = getFlightKey(airline, flight, timestamp);
         require(!isPassengerInsured(passenger, _key),

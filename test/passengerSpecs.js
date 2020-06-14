@@ -17,6 +17,7 @@ contract('Flight Surety Passenger Tests', async (accounts) => {
 
   before('setup contract', async () => {
     config = await Test.Config(accounts);
+
     // await config.flightSuretyData.authorizeCaller(config.flightSuretyApp.address);
   });
 
@@ -25,17 +26,32 @@ contract('Flight Surety Passenger Tests', async (accounts) => {
   /****************************************************************************************/
 
   describe('passenger / insuree contract interaction', () => {
-    it('should not be possible to purchase insurance for an non registered airline', async () => {
+    it('should not be possible to purchase insurance for an non registered flight', async () => {
       await truffleAssert.reverts(
-        config.flightSuretyApp.buy(newAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1, value: web3.utils.toWei('1.1', 'Ether')}),
-        'The airline must be registered to buy insurance.'
+        config.flightSuretyApp.buy(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1, value: web3.utils.toWei('1', 'Ether')}),
+        'Flight must be registered'
       )
     })
-    describe('Passenger Payment', () => {
+    describe('Passenger Buy Insurance', () => {
+      before(async () => {
+        await config.flightSuretyApp.registerFlight(FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: config.firstAirline});
+      })
+      xit('should not be possible to purchase insurance for an non registered airline', async () => {
+        await truffleAssert.reverts(
+          config.flightSuretyApp.buy(newAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1, value: web3.utils.toWei('1', 'Ether')}),
+          'The airline must be registered to buy insurance.'
+        )
+      })
       it('should not be possible to purchase insurance valued more than 1 ether', async () => {
         await truffleAssert.reverts(
           config.flightSuretyApp.buy(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1, value: web3.utils.toWei('1.1', 'Ether')}),
           'Cannot buy insurance valued at more than 1 ether.'
+        )
+      })
+      it('should not be possible to purchase insurance without any value', async () => {
+        await truffleAssert.reverts(
+          config.flightSuretyApp.buy(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1, value: web3.utils.toWei('0', 'Ether')}),
+          'Cannot buy insurance without any value.'
         )
       })
       it('should not be a registed airline makeing an instance purchase', async () => {
