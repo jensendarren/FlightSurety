@@ -6,6 +6,7 @@ import express from 'express';
 let config = Config['localhost'];
 let web3 = new Web3(new Web3.providers.WebsocketProvider(config.url.replace('http', 'ws')));
 let flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
+let registeredAirline;
 
 const ORACLES_COUNT = 20;
 const STATUS_CODE_UNKNOWN = 0;
@@ -56,6 +57,11 @@ const registerOracles =  async () => {
   return true;
 }
 
+const registerFlights = async () => {
+  // register some flights here for testing the Dapp
+  await flightSuretyApp.methods.registerFlight('AC110', '1591878209161').send({ from: registeredAirline, gas: 30000000 });
+}
+
 const fetchFlightStatus = async (req) => {
   console.log('Fetching flight status for:', [req.index, req.airline, req.flight, req.timestamp])
   for(let i=0; i<oracles[req.index].length; i++) {
@@ -71,7 +77,9 @@ const fetchFlightStatus = async (req) => {
   accounts = await web3.eth.getAccounts();
   web3.eth.defaultAccount = accounts[0];
   console.log("DEFAULT ACCOUNT", web3.eth.defaultAccount);
+  registeredAirline = accounts[1];
   let registered = await registerOracles();
+  await registerFlights();
 })();
 
 const app = express();
