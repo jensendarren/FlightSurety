@@ -123,7 +123,8 @@ contract FlightSuretyData {
     *      Can only be called from FlightSuretyApp contract
     *
     */
-    function registerAirline(address airline, address voter) external requireAirlineFunded(voter) returns(bool success, uint8 votes) {
+    function registerAirline(address airline, address voter) external
+        requireIsOperational requireAirlineFunded(voter) returns(bool success, uint8 votes) {
         require(!registeredAirlines[airline], "Airline is already successfully registered.");
         require(!votedAirlines[voter][airline], "Sender already cast vote for registering this airline");
 
@@ -158,7 +159,7 @@ contract FlightSuretyData {
     *      resulting in insurance payouts, the contract should be self-sustaining
     *
     */
-    function fund(address airline) public payable  {
+    function fund(address airline) requireIsOperational public payable  {
         require(isAirlineRegistered(airline), "Only registered airlines can fund contract.");
         require(msg.value >= 10 ether, "Insufficient funds sent. Please send at least 10 ether.");
         // Log the balance transfer for the airline
@@ -170,7 +171,7 @@ contract FlightSuretyData {
     * @dev Buy insurance for a flight
     *
     */
-    function buy(address passenger, address airline, string flight, uint256 timestamp) external payable {
+    function buy(address passenger, address airline, string flight, uint256 timestamp) requireIsOperational external payable {
         require(isAirlineRegistered(airline), "The airline must be registered to buy insurance.");
         require(msg.value <= 1 ether, "Cannot buy insurance valued at more than 1 ether.");
         require(!registeredAirlines[passenger], "Airlines can not purchase passenger insturance.");
@@ -192,7 +193,7 @@ contract FlightSuretyData {
     /**
      *  @dev Credits payouts to insurees
     */
-    function creditInsurees(address airline, string flight, uint256 timestamp) external {
+    function creditInsurees(address airline, string flight, uint256 timestamp) requireIsOperational external {
         bytes32 _key = getFlightKey(airline, flight, timestamp);
         for (uint256 i = 0; i < passengers[_key].length; i++) {
             address passenger = passengers[_key][i];
@@ -204,7 +205,7 @@ contract FlightSuretyData {
      *  @dev Transfers eligible payout funds to insuree
      *
     */
-    function pay(address passenger, address airline, string flight, uint256 timestamp) external view {
+    function pay(address passenger, address airline, string flight, uint256 timestamp) requireIsOperational external view {
         bytes32 _key = getFlightKey(airline, flight, timestamp);
         require(isPassengerInsured(passenger, _key), 'Passenger is not insured.');
         require(flights[_key][passenger].creditDue > 0, 'There is no payment due for this passenger.');
