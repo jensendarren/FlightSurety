@@ -17,18 +17,30 @@ import './flightsurety.css';
 
         // User-submitted transaction
         DOM.elid('submit-buy-insurance').addEventListener('click', () => {
-            let flight = DOM.elid('flight-number').value;
-            let timestamp = DOM.elid('flight-timestamp').value;
+            let e = DOM.elid("flights");
+            let flight = e.options[e.selectedIndex].value;
+            let number = flight.split(' |')[0]
+            let timestamp = flight.split('| ')[1]
+            let value = DOM.elid('insurance-value').value;
+            let title = 'Insurance';
+            let description = 'Purchase';
 
-            console.log('Received request for insurance purcahse: ', [flight, timestamp]);
+            if(value == '') { value = '0' } // obviously the value would usually come via MetaMask anyway but this is to test the prototype so we can try out sending 0 value when purchasing insurance.
 
-            contract.buyInsurance(flight, timestamp, (error, result) => {
-                if(error) console.log(error);
-                console.log(result);
-                // display('Passenger insurance', 'Purchased!', [ { label: 'Purchase Flight Insurance', error: error, value: result.flight + ' ' + result.timestamp} ]);
+            contract.buyInsurance(number, timestamp, value, (error, result) => {
+                let errorMsg = 'There was an error';
+                if(error) {
+                    if(error.toString().includes('revert')) {
+                        errorMsg = error.toString().split('revert ')[1]
+                    } else {
+                        errorMsg = error.toString();
+                    }
+                    display(title, description, [ { label: 'Failed!', error: errorMsg } ]);
+                } else {
+                    display(title, description, [ { label: 'Success!', value: `You are now insured on flight: ${result.flight} | ${result.timestamp}` } ]);
+                }
             });
         })
-
 
         // User-submitted transaction
         DOM.elid('submit-oracle').addEventListener('click', () => {

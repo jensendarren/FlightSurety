@@ -28,6 +28,17 @@ flightSuretyApp.events.OracleRequest({
 });
 
 let accounts;
+let flights = [
+  ['AC110', '1591878209161'],
+  ['BA220', '1592117654886'],
+  ['PP999', '1591877624540'],
+  ['AC7559', '1511875664760'],
+  ['TG910', '1591877664560'],
+  ['AF888', '1595877664555'],
+  ['BA09', '1591877664510'],
+  ['VA777', '1591877664000'],
+  ['TG920', '1591877661111']
+]
 let oracles = {
   0: [],
   1: [],
@@ -59,7 +70,11 @@ const registerOracles =  async () => {
 
 const registerFlights = async () => {
   // register some flights here for testing the Dapp
-  await flightSuretyApp.methods.registerFlight('AC110', '1591878209161').send({ from: registeredAirline, gas: 30000000 });
+  flights.forEach(async f => {
+      await flightSuretyApp.methods.registerFlight(f[0], f[1]).send({ from: registeredAirline, gas: 30000000 });
+      console.log("Registered Flight:", f);
+    }
+  );
 }
 
 const fetchFlightStatus = async (req) => {
@@ -78,7 +93,7 @@ const fetchFlightStatus = async (req) => {
   web3.eth.defaultAccount = accounts[0];
   console.log("DEFAULT ACCOUNT", web3.eth.defaultAccount);
   registeredAirline = accounts[1];
-  let registered = await registerOracles();
+  await registerOracles();
   await registerFlights();
 })();
 

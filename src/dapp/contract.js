@@ -29,8 +29,6 @@ export default class Contract {
                 this.passengers.push(accts[counter++]);
             }
 
-            console.log(this.passengers);
-
             callback();
         });
     }
@@ -51,12 +49,12 @@ export default class Contract {
         }
         self.flightSuretyApp.methods
             .fetchFlightStatus(payload.airline, payload.flight, payload.timestamp)
-            .send({ from: self.owner}, (error, result) => {
+            .send({from: self.owner}, (error, result) => {
                 callback(error, payload);
             });
     }
 
-    buyInsurance(flight, timestamp) {
+    buyInsurance(flight, timestamp, value,  callback) {
         let self = this;
         let payload = {
             airline: self.airlines[0],
@@ -65,7 +63,10 @@ export default class Contract {
         }
         self.flightSuretyApp.methods
             .buy(payload.airline, payload.flight, payload.timestamp)
-            .send({ from: self.passengers[0], value: this.web3.utils.toWei('1', 'Ether') }, (error, result) => {
+            .send({ from: self.passengers[0],
+                    value: this.web3.utils.toWei(value, 'Ether'),
+                    gas: 300000
+                }, (error, result) => {
                 callback(error, payload)
             });
     }

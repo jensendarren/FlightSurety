@@ -23,10 +23,22 @@
 
         <div id="display-wrapper" class="top-20">
         </div>
-        <p> Try Flight: 'AC110', Timestamp: '1591878209161' </p>
         <div class="row top-20">
-            <label class="form">Flight</label> <input type="text" id="flight-number">
-            <label class="form">Departure Timestamp</label> <input type="text" id="flight-timestamp">
+            <label class="form">Select Flight</label>
+            <select id="flights">
+                <option value="0 | 0">Select a flight!</option>
+                <option value="AC110 | 1591878209161">AC110 | 1591878209161</option>
+                <option value="BA220 | 1592117654886">BA220 | 1592117654886</option>
+                <option value="PP999 | 1591877624540">PP999 | 1591877624540</option>
+                <option value="AC7559 | 1511875664760">AC7559 | 1511875664760</option>
+                <option value="TG910 | 1591877664560">TG910 | 1591877664560</option>
+                <option value="AF888 | 1595877664555">AF888 | 1595877664555</option>
+                <option value="BA09 | 1591877664510">BA09 | 1591877664510</option>
+                <option value="VA777 | 1591877664000">VA777 | 1591877664000</option>
+                <option value="TG920 | 1591877661111">TG920 | 1591877661111</option>
+            </select>
+            <p>&nbsp;&nbsp;&nbsp;</p>
+            <label class="form">Amount (in ETHER)</label> <input type="text" id="insurance-value">
             <btn class="btn btn-primary" id="submit-buy-insurance">Purchase Insurance</btn>
         </div>
         <div id="display-wrapper" class="top-20">
@@ -35,9 +47,6 @@
             <label class="form">Flight</label> <input type="text" id="flight-number">
             <btn class="btn btn-primary" id="submit-oracle">Submit to Oracles</btn>
         </div>
-
     </main>
-
 </body>
-
 </html>
