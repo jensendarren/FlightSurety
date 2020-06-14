@@ -11,6 +11,7 @@ contract FlightSuretyData {
     /********************************************************************************************/
 
     address private contractOwner;                                      // Account used to deploy contract
+    address private authorizedCaller;                                   // Authorized app contract to call the contract
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
 
     // Struct for holding instance amounts paid in and due (if flight is delayed)
@@ -78,6 +79,14 @@ contract FlightSuretyData {
         _;
     }
 
+    /**
+    * @dev Modifier that requires the "AuthorizedCaller" account to be the function caller
+    */
+    modifier requireAuthorizedCaller() {
+        require(msg.sender == authorizedCaller, "Caller is not an authorized caller");
+        _;
+    }
+
 
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
@@ -114,6 +123,10 @@ contract FlightSuretyData {
         operational = mode;
     }
 
+    function setAuthorizedCaller(address appContract) requireContractOwner external {
+        authorizedCaller = appContract;
+    }
+
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -124,7 +137,7 @@ contract FlightSuretyData {
     *
     */
     function registerAirline(address airline, address voter) external
-        requireIsOperational requireAirlineFunded(voter) returns(bool success, uint8 votes) {
+        requireAuthorizedCaller requireIsOperational requireAirlineFunded(voter) returns(bool success, uint8 votes) {
         require(!registeredAirlines[airline], "Airline is already successfully registered.");
         require(!votedAirlines[voter][airline], "Sender already cast vote for registering this airline");
 
@@ -171,7 +184,7 @@ contract FlightSuretyData {
     * @dev Buy insurance for a flight
     *
     */
-    function buy(address passenger, address airline, string flight, uint256 timestamp) requireIsOperational external payable {
+    function buy(address passenger, address airline, string flight, uint256 timestamp) requireAuthorizedCaller requireIsOperational external payable {
         require(isAirlineRegistered(airline), "The airline must be registered to buy insurance.");
         require(msg.value <= 1 ether, "Cannot buy insurance valued at more than 1 ether.");
         require(msg.value > 0, "Cannot buy insurance without any value.");
@@ -194,7 +207,7 @@ contract FlightSuretyData {
     /**
      *  @dev Credits payouts to insurees
     */
-    function creditInsurees(address airline, string flight, uint256 timestamp) requireIsOperational external {
+    function creditInsurees(address airline, string flight, uint256 timestamp) requireAuthorizedCaller requireIsOperational external {
         bytes32 _key = getFlightKey(airline, flight, timestamp);
         for (uint256 i = 0; i < passengers[_key].length; i++) {
             address passenger = passengers[_key][i];
@@ -206,7 +219,7 @@ contract FlightSuretyData {
      *  @dev Transfers eligible payout funds to insuree
      *
     */
-    function pay(address passenger, address airline, string flight, uint256 timestamp) requireIsOperational external view {
+    function pay(address passenger, address airline, string flight, uint256 timestamp) requireAuthorizedCaller requireIsOperational external view {
         bytes32 _key = getFlightKey(airline, flight, timestamp);
         require(isPassengerInsured(passenger, _key), 'Passenger is not insured.');
         require(flights[_key][passenger].creditDue > 0, 'There is no payment due for this passenger.');

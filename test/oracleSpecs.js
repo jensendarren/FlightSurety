@@ -37,6 +37,7 @@ contract('Flight Surety Oracle Tests', async (accounts) => {
 
   before('setup contract', async () => {
     config = await Test.Config(accounts);
+    await config.flightSuretyData.setAuthorizedCaller(config.flightSuretyApp.address);
   });
 
   it('can register oracles', async () => {

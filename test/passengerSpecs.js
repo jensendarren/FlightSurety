@@ -17,8 +17,7 @@ contract('Flight Surety Passenger Tests', async (accounts) => {
 
   before('setup contract', async () => {
     config = await Test.Config(accounts);
-
-    // await config.flightSuretyData.authorizeCaller(config.flightSuretyApp.address);
+    await config.flightSuretyData.setAuthorizedCaller(config.flightSuretyApp.address);
   });
 
   /****************************************************************************************/
@@ -35,12 +34,6 @@ contract('Flight Surety Passenger Tests', async (accounts) => {
     describe('Passenger Buy Insurance', () => {
       before(async () => {
         await config.flightSuretyApp.registerFlight(FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: config.firstAirline});
-      })
-      xit('should not be possible to purchase insurance for an non registered airline', async () => {
-        await truffleAssert.reverts(
-          config.flightSuretyApp.buy(newAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1, value: web3.utils.toWei('1', 'Ether')}),
-          'The airline must be registered to buy insurance.'
-        )
       })
       it('should not be possible to purchase insurance valued more than 1 ether', async () => {
         await truffleAssert.reverts(
@@ -100,7 +93,9 @@ contract('Flight Surety Passenger Tests', async (accounts) => {
         )
       })
       it('is possible to credit insurers and make a payout', async () => {
+        await config.flightSuretyData.setAuthorizedCaller(config.owner);
         await config.flightSuretyData.creditInsurees(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP);
+        await config.flightSuretyData.setAuthorizedCaller(config.flightSuretyApp.address);
 
         let startBalance = BigNumber(await web3.eth.getBalance(passenger1));
         let tx = await config.flightSuretyApp.pay(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1});

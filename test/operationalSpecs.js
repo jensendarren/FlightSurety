@@ -8,6 +8,7 @@ contract('Flight Surety Contraction Operational Tests', async (accounts) => {
 
   before('setup contract', async () => {
     config = await Test.Config(accounts);
+    await config.flightSuretyData.setAuthorizedCaller(config.flightSuretyApp.address);
   });
 
   it('has correct initial isOperational() value', async () => {
@@ -31,7 +32,9 @@ contract('Flight Surety Contraction Operational Tests', async (accounts) => {
   });
 
   it('can block access to functions using requireIsOperational when operating status is false', async  () => {
+    await config.flightSuretyData.setAuthorizedCaller(config.owner);
     await config.flightSuretyData.setOperatingStatus(false);
+    await config.flightSuretyData.setAuthorizedCaller(config.flightSuretyApp.address);
     await truffleAssert.reverts(
       config.flightSuretyApp.registerAirline(newAirline, {from: config.firstAirline }),
       "Contract is currently not operational"

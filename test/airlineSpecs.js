@@ -14,7 +14,7 @@ contract('Flight Surety Airline Tests', async (accounts) => {
 
   before('setup contract', async () => {
     config = await Test.Config(accounts);
-    // await config.flightSuretyData.authorizeCaller(config.flightSuretyApp.address);
+    await config.flightSuretyData.setAuthorizedCaller(config.flightSuretyApp.address);
   });
 
   describe('funding the contract', () => {

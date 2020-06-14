@@ -86,7 +86,12 @@ const fetchFlightStatus = async (req) => {
     // pick a status code at random for now!
     let status = STATUS_CODES[Math.floor(Math.random() * STATUS_CODES.length)];
     console.log("ORACLE USED: ",  oracles[req.index][i]);
-    await flightSuretyApp.methods.submitOracleResponse(req.index, req.airline, req.flight, req.timestamp, status).send({from: oracles[req.index][i], gas: 30000000});
+    try {
+      await flightSuretyApp.methods.submitOracleResponse(req.index, req.airline, req.flight, req.timestamp, status).send({from: oracles[req.index][i], gas: 30000000});
+    } catch(e) {
+      console.log(Object.keys(e))
+      console.error("Oracle could not submit response: ", e.message);
+    }
   }
 }
 
