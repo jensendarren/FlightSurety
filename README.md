@@ -1,5 +1,7 @@
 # FlightSurety
 
+[![Build Status](https://travis-ci.org/jensendarren/FlightSurety.svg?branch=master)](https://travis-ci.org/jensendarren/FlightSurety)
+
 FlightSurety is a sample application project for Udacity's Blockchain course.
 
 ## Install
