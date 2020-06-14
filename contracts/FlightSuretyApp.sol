@@ -256,7 +256,7 @@ contract FlightSuretyApp {
 
 
         bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
-        require(oracleResponses[key].isOpen, "Flight or timestamp do not match oracle request");
+        require(oracleResponses[key].isOpen, "Flight or timestamp do not match oracle request or the request is closed");
 
         oracleResponses[key].responses[statusCode].push(msg.sender);
 
@@ -266,6 +266,9 @@ contract FlightSuretyApp {
         if (oracleResponses[key].responses[statusCode].length >= MIN_RESPONSES) {
 
             emit FlightStatusInfo(airline, flight, timestamp, statusCode);
+
+            // close the requirement to respond
+            oracleResponses[key].isOpen = false;
 
             // Handle flight status as appropriate
             processFlightStatus(airline, flight, timestamp, statusCode);

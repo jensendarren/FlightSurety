@@ -123,5 +123,13 @@ contract('Flight Surety Oracle Tests', async (accounts) => {
                 (e.status == selectedStatusCode)
       })
     })
+    it('request is closed after FlightStatusInfo fired', async () => {
+      let oracle = oracles[requestedOracleIndex][0];
+
+      await truffleAssert.reverts(
+        config.flightSuretyApp.submitOracleResponse(requestedOracleIndex, config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, selectedStatusCode, {from: oracle}),
+        'Flight or timestamp do not match oracle request or the request is closed'
+      )
+    })
   })
 });
