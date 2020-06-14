@@ -192,8 +192,7 @@ contract FlightSuretyData {
     /**
      *  @dev Credits payouts to insurees
     */
-    function creditInsurees(address airline, string flight, uint256 timestamp) external view {
-        // TODO: check the airline is registered
+    function creditInsurees(address airline, string flight, uint256 timestamp) external {
         bytes32 _key = getFlightKey(airline, flight, timestamp);
         for (uint256 i = 0; i < passengers[_key].length; i++) {
             address passenger = passengers[_key][i];

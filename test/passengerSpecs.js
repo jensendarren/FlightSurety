@@ -84,7 +84,7 @@ contract('Flight Surety Passenger Tests', async (accounts) => {
         )
       })
       it('is possible to credit insurers and make a payout', async () => {
-        await config.flightSuretyApp.creditInsurees(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP);
+        await config.flightSuretyData.creditInsurees(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP);
 
         let startBalance = BigNumber(await web3.eth.getBalance(passenger1));
         let tx = await config.flightSuretyApp.pay(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1});

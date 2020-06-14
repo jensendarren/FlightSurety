@@ -134,11 +134,6 @@ contract FlightSuretyApp {
         flightSuretyData.pay(msg.sender, airline, flight, timestamp);
     }
 
-    function creditInsurees(address airline, string flight, uint256 timestamp) public  {
-        // TODO: check the flight is actually marked as deplayed!
-        flightSuretyData.creditInsurees(airline, flight, timestamp);
-    }
-
    /**
     * @dev Register a future flight for insuring.
     *
@@ -159,12 +154,14 @@ contract FlightSuretyApp {
     * @dev Called after oracle has updated flight status
     *
     */
-    function processFlightStatus(
-                                    // address airline,
-                                    // string memory flight,
-                                    // uint256 timestamp,
-                                    // uint8 statusCode
-                                ) internal pure {
+    function processFlightStatus(address airline, string memory flight, uint256 timestamp, uint8 statusCode) internal {
+        // update the flight mapping with the new statis
+        bytes32 _key = getFlightKey(airline, flight, timestamp);
+        flights[_key].statusCode = statusCode;
+        // if the status is STATUS_CODE_LATE_AIRLINE then credit the insureed passengers
+        if (statusCode == STATUS_CODE_LATE_AIRLINE) {
+            flightSuretyData.creditInsurees(airline, flight, timestamp);
+        }
     }
 
 
@@ -272,7 +269,7 @@ contract FlightSuretyApp {
             emit FlightStatusInfo(airline, flight, timestamp, statusCode);
 
             // Handle flight status as appropriate
-            //processFlightStatus(airline, flight, timestamp, statusCode);
+            processFlightStatus(airline, flight, timestamp, statusCode);
         }
     }
 
