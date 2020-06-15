@@ -1,5 +1,6 @@
 var Test = require('../config/testConfig.js');
 var truffleAssert = require('truffle-assertions');
+var BigNumber = require('bignumber.js');
 
 contract('Flight Surety Airline Tests', async (accounts) => {
 
@@ -31,10 +32,10 @@ contract('Flight Surety Airline Tests', async (accounts) => {
         )
       })
     it('should be possible for a registered airline to send ether to fund the contract', async () => {
-      startContractBal = BigInt(await web3.eth.getBalance(config.flightSuretyData.address));
+      startContractBal = BigNumber(await web3.eth.getBalance(config.flightSuretyData.address));
       await config.flightSuretyApp.fund({from: config.firstAirline, value: AIRLINE_ANTE})
-      endContractBal = BigInt(await web3.eth.getBalance(config.flightSuretyData.address));
-      assert.equal(endContractBal - startContractBal, AIRLINE_ANTE, 'Contract did not receive expected ante mount');
+      endContractBal = BigNumber(await web3.eth.getBalance(config.flightSuretyData.address));
+      expect(endContractBal.minus(startContractBal).isEqualTo(AIRLINE_ANTE)).to.be.true;
       isAirlineFunded = await config.flightSuretyData.isAirlineFunded(config.firstAirline);
       assert.equal(isAirlineFunded, true, 'Airline was not updated as having funded the contract');
     })

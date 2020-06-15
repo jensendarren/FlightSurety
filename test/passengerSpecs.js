@@ -14,6 +14,8 @@ contract('Flight Surety Passenger Tests', async (accounts) => {
   const FLIGHT_TIMESTAMP = '1591878209161'
   const FLIGHT_KEY = '0x9ade82db5b73ee2f831ed8e5250ec1c25ca144e93a2c2763385b823aa4ba5dff'
   const NON_VALID_FLIGHT_KEY = '0xdebdf334a196e44c8850aa8cc16dd5970e9ec484150c295329c72af6cadb24cd'
+  const INSUREES_PAYOUT_PERCENTAGE = 150
+  const INSURED_AMOUNT = web3.utils.toWei('1', 'Ether')
 
   before('setup contract', async () => {
     config = await Test.Config(accounts);
@@ -58,7 +60,7 @@ contract('Flight Surety Passenger Tests', async (accounts) => {
         assert.equal(isPassengerInsrured, false, 'Passenger was marked as insured for a flight when they should not be.');
       })
       it('should be possible to purchase insurance for 1 ether or less', async () => {
-        await config.flightSuretyApp.buy(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1, value: web3.utils.toWei('1', 'Ether')});
+        await config.flightSuretyApp.buy(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, {from: passenger1, value: INSURED_AMOUNT});
         //check isinsured
         isPassengerInsrured = await config.flightSuretyData.isPassengerInsured(passenger1, FLIGHT_KEY);
         assert.equal(isPassengerInsrured, true, 'Passenger was not marked as insured for this flight');
@@ -94,7 +96,7 @@ contract('Flight Surety Passenger Tests', async (accounts) => {
       })
       it('is possible to credit insurers and make a payout', async () => {
         await config.flightSuretyData.setAuthorizedCaller(config.owner);
-        await config.flightSuretyData.creditInsurees(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP);
+        await config.flightSuretyData.creditInsurees(config.firstAirline, FLIGHT_NUMBER, FLIGHT_TIMESTAMP, INSUREES_PAYOUT_PERCENTAGE);
         await config.flightSuretyData.setAuthorizedCaller(config.flightSuretyApp.address);
 
         let startBalance = BigNumber(await web3.eth.getBalance(passenger1));

@@ -11,6 +11,7 @@ import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 /************************************************** */
 contract FlightSuretyApp {
     using SafeMath for uint256; // Allow SafeMath functions to be called for all uint256 types (similar to "prototype" in Javascript)
+    using SafeMath for uint8;
     FlightSuretyData flightSuretyData; // variable to reference the data contract
 
     /********************************************************************************************/
@@ -35,6 +36,14 @@ contract FlightSuretyApp {
         address airline;
     }
     mapping(bytes32 => Flight) private flights;
+
+    uint8 private constant INSUREES_PAYOUT_PERCENTAGE = 150;
+
+    // map nominated airline address to vote counter of voting airline
+    mapping(address => uint8) private nominatedAirlines;
+    // map the airline that voted for which airline
+    // to make sure they can only vote once
+    mapping(address => mapping(address => bool)) private votedAirlines;
 
 
     /********************************************************************************************/
@@ -70,6 +79,11 @@ contract FlightSuretyApp {
          _;
      }
 
+    modifier requireAirlineFunded() {
+        require(isAirlineFunded(msg.sender), "Airline connot vote until it funds the contract.");
+        _;
+    }
+
     modifier requireFlightRegistered(bytes32 key) {
          require(flights[key].isRegistered, "Flight must be registered");
          _;
@@ -100,6 +114,10 @@ contract FlightSuretyApp {
         return flightSuretyData.isAirlineRegistered(airline);
     }
 
+    function isAirlineFunded(address airline) public view returns(bool) {
+        return flightSuretyData.isAirlineFunded(airline);
+    }
+
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -109,10 +127,30 @@ contract FlightSuretyApp {
     * @dev Add an airline to the registration queue
     *
     */
-    function registerAirline(address airline) external requireIsOperational requireAirlineRegistered returns(bool success, uint8 votes) {
-        // add to a nominatedAirlines mapping
-        (success, votes) = flightSuretyData.registerAirline(airline, msg.sender);
+    function registerAirline(address airline) external
+        requireIsOperational requireAirlineRegistered requireAirlineFunded returns(bool success, uint8 votes) {
+        require(!isAirlineRegistered(airline), "Airline is already successfully registered.");
+        require(!votedAirlines[msg.sender][airline], "Sender already cast vote for registering this airline");
+
+        success = false;
+        // keep a track of which airline the sender voted for
+        votedAirlines[msg.sender][airline] = true;
+        // Increment vote counter for the nominated airline
+        nominatedAirlines[airline] = uint8(nominatedAirlines[airline].add(1));
+        votes = nominatedAirlines[airline];
+
+        if (airlineRegistrationConsensusReached(votes)) {
+            flightSuretyData.registerAirline(airline);
+        }
         return (success, votes);
+    }
+
+    function airlineRegistrationConsensusReached(uint8 votes) internal view returns(bool) {
+        if (flightSuretyData.airlineRegisteredCounter() < 4) {
+            return true;
+        }
+        // Return if the vote amounts to more than 50% of the registered airlines
+        return (votes.mul(2) >= flightSuretyData.airlineRegisteredCounter());
     }
 
     /**
@@ -121,11 +159,17 @@ contract FlightSuretyApp {
     *
     */
     function fund() requireIsOperational payable public {
+        require(isAirlineRegistered(msg.sender), "Only registered airlines can fund contract.");
+        require(msg.value >= 10 ether, "Insufficient funds sent. Please send at least 10 ether.");
         flightSuretyData.fund.value(msg.value)(msg.sender);
     }
 
     function buy(address airline, string flight, uint256 timestamp)
         requireIsOperational requireFlightRegistered(getFlightKey(airline, flight, timestamp)) payable public {
+        require(isAirlineRegistered(airline), "The airline must be registered to buy insurance.");
+        require(!isAirlineRegistered(msg.sender), "Airlines can not purchase passenger insturance.");
+        require(msg.value <= 1 ether, "Cannot buy insurance valued at more than 1 ether.");
+        require(msg.value > 0, "Cannot buy insurance without any value.");
         flightSuretyData.buy.value(msg.value)(msg.sender, airline, flight, timestamp);
     }
 
@@ -159,7 +203,7 @@ contract FlightSuretyApp {
         flights[_key].statusCode = statusCode;
         // if the status is STATUS_CODE_LATE_AIRLINE then credit the insureed passengers
         if (statusCode == STATUS_CODE_LATE_AIRLINE) {
-            flightSuretyData.creditInsurees(airline, flight, timestamp);
+            flightSuretyData.creditInsurees(airline, flight, timestamp, INSUREES_PAYOUT_PERCENTAGE);
         }
     }
 
@@ -319,12 +363,14 @@ contract FlightSuretyApp {
 
 // region FlightSuretyData interface
 contract FlightSuretyData {
+    uint8 public airlineRegisteredCounter;
     function isOperational() external returns(bool);
     function isAirlineRegistered(address airline) external returns(bool);
-    function registerAirline(address airline, address voter) external returns(bool, uint8);
+    function isAirlineFunded(address airline) external returns(bool);
+    function registerAirline(address airline) external;
     function fund(address airline) external payable;
     function buy(address insuree, address airline, string flight, uint256 timestamp) external payable;
     function pay(address insuree, address airline, string flight, uint256 timestamp) external payable;
-    function creditInsurees(address airline, string flight, uint256 timestamp) external;
+    function creditInsurees(address airline, string flight, uint256 timestamp, uint8 percentage) external;
 }
 // endregion
