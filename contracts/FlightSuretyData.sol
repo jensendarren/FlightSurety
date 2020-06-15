@@ -96,6 +96,15 @@ contract FlightSuretyData {
         return insured.paidIn > 0;
     }
 
+    function isAirlineRegistered(address airline) public view returns(bool) {
+        return registeredAirlines[airline];
+    }
+
+    function isAirlineFunded(address airline) public view returns(bool) {
+        return fundedAirlines[airline] > 0;
+    }
+
+
     /**
     * @dev Sets contract operations on/off
     *

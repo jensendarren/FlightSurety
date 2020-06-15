@@ -80,7 +80,9 @@ contract('Flight Surety Passenger Tests', async (accounts) => {
     describe('Passenger Payout', () => {
       before(async () => {
         // fund the contract so that we can make payouts!
+        await config.flightSuretyData.setAuthorizedCaller(config.owner);
         await web3.eth.sendTransaction({from: config.firstAirline, to: config.flightSuretyData.address, value: web3.utils.toWei('10', 'Ether')})
+        await config.flightSuretyData.setAuthorizedCaller(config.flightSuretyApp.address);
       })
       it('the passenger must be insured for the flight to be paid', async () => {
         await truffleAssert.reverts(
