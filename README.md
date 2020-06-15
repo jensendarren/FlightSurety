@@ -107,7 +107,7 @@ When testing the client Dapp you should see output similar as this:
 ### Issue Reporting
 
 If you experience with bugs or need further improvement, please create a new issue under [Issues](https://github.com/jensendarren/star-notary-ethereum-dapp-cryptostar/issues).
-).
+
 
 ### Contributing to the FlightSurety App!
 
@@ -115,11 +115,11 @@ Pull requests are very welcome. Before submitting a pull request, please make su
 
 ### Authors
 
-This **FlightSurety* application was developed as part of the Blockchain Nanodegree with [Udacity](http://www.udacity.com) and [Darren Jensen](http://www.tweetegy.com).
+This **FlightSurety** application was developed as part of the Blockchain Nanodegree with [Udacity](http://www.udacity.com) and [Darren Jensen](http://www.tweetegy.com).
 
 ### License
 
-This **FlightSurety* application is released under [AGPL](http://www.gnu.org/licenses/agpl-3.0-standalone.html)
+This **FlightSurety** application is released under [AGPL](http://www.gnu.org/licenses/agpl-3.0-standalone.html)
 
 ### Disclaimer
 
@@ -127,7 +127,8 @@ This application is part of a _project assignment_ and is most definitely __not_
 
 ### Remaining issues / ideas
 
-* Complete features in the Dapp client.
+* Complete features in the Dapp client
+* Set style for _Final Flight Status_ to stand out
 
 ### Resources
 
