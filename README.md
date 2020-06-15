@@ -45,9 +45,14 @@ npm run server
 
 When the server starts up it registers 20 Oracles and 8 Flights which will be utilized when running the client later. Watch the output of the server logs in the console and you should see the Oracles registration list, something like this:
 
-| Oracles        | Flights           |
-| ------------- |:-------------:|
-| ![](./img/registered-oracles.png) | ![](./img/registered-flights.png) |
+**Registered Oracles**
+
+<img src="./img/registered-oracles.png" alt="drawing" width="400"/>
+
+**Registered Flights**
+
+<img src="./img/registered-flights.png" alt="drawing" width="400"/>
+
 
 If the server does not start up or you do not see the Oracles and Flights being registered please reach out to me.
 
@@ -93,11 +98,11 @@ When testing the client Dapp you should see output similar as this:
 
 **Purchase Insurance Test**
 
-<img src="./img/insurance-purchase-dapp.png" alt="drawing" width="200"/>
+<img src="./img/insurance-purchase-dapp.png" alt="drawing" width="400"/>
 
 **Request Flight Status from Oracles Test**
 
-<img src="./img/oracle-events-dapp.png" alt="drawing" width="200"/>
+<img src="./img/oracle-events-dapp.png" alt="drawing" width="400"/>
 
 ### Issue Reporting
 
