@@ -15,9 +15,9 @@ After cloning this repo you will need to run several services to run this applic
 
 Below are details on how to start each service:
 
-### Ganacge
+### Ganache
 
-Ganacge needs to be started up with specific commmand line arguments so that the tests and application run correctly. So open a terminal window and run:
+Ganache needs to be started up with specific commmand line arguments so that the tests and application run correctly. So open a terminal window and run:
 
 ```
 ganache-cli -a 50 --gasLimit 300000000 --gasPrice 20000000000 -m 'candy maple cake sugar pudding cream honey rich smooth crumble sweet treat'
@@ -25,7 +25,7 @@ ganache-cli -a 50 --gasLimit 300000000 --gasPrice 20000000000 -m 'candy maple ca
 
 ### Truffle
 
-Truffle is needed to compile, test and deploy the contracts. In a new run the following truffle commands:
+Truffle is needed to compile, test and deploy the contracts. In a new terminal window run the following truffle commands:
 
 ```
 truffle compile
@@ -45,11 +45,9 @@ npm run server
 
 When the server starts up it registers 20 Oracles and 8 Flights which will be utilized when running the client later. Watch the output of the server logs in the console and you should see the Oracles registration list, something like this:
 
-![](./img/registered-oracles.png)
-
-You will also see the Flight registration list, something like this:
-
-![](./img/registered-flights.png)
+| Oracles        | Flights           |
+| ------------- |:-------------:|
+| ![](./img/registered-oracles.png) | ![](./img/registered-flights.png) |
 
 If the server does not start up or you do not see the Oracles and Flights being registered please reach out to me.
 
@@ -95,11 +93,11 @@ When testing the client Dapp you should see output similar as this:
 
 **Purchase Insurance Test**
 
-![](/img/insurance-purchase-dapp.png)
+<img src="./img/insurance-purchase-dapp.png" alt="drawing" width="200"/>
 
 **Request Flight Status from Oracles Test**
 
-![](/img/oracle-events-dapp.png)
+<img src="./img/oracle-events-dapp.png" alt="drawing" width="200"/>
 
 ### Issue Reporting
 
