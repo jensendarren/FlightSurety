@@ -130,7 +130,7 @@ contract FlightSuretyData {
     *      resulting in insurance payouts, the contract should be self-sustaining
     *
     */
-    function fund(address airline) requireIsOperational requireAuthorizedCaller external payable {
+    function fund(address airline) requireIsOperational requireAuthorizedCaller public payable {
         fundedAirlines[airline] = msg.value;
     }
 
