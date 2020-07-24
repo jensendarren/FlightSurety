@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/jensendarren/FlightSurety.svg?branch=master)](https://travis-ci.org/jensendarren/FlightSurety)
 
-FlightSurety is a sample application and is the fourth Project for the [Blockchain Nanodegree](https://www.udacity.com/course/blockchain-developer-nanodegree--nd1309) with __Udacity__. Enjoy and feel free to comment!
+This is a blockchain Dapp that makes use of Oracles to determine if flights are delayed and the reason for the delay. This information is then used to determine if insured passengers can get a payout and for how much.
 
 ## Run the full application locally
 
